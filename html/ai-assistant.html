@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HILLKOFFBOT AI · HILLKOFF Coffee Machine Knowledge Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/detail.css">
+</head>
+<body>
+
+<button class="hk-sidebar__toggle" data-hk-sidebar-toggle aria-label="เปิดเมนู">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+<div class="hk-backdrop" data-hk-backdrop></div>
+
+<div class="hk-app">
+  <aside class="hk-sidebar">
+    <div class="hk-brand">
+      <div class="hk-brand__mark">HK</div>
+      <div>
+        <div class="hk-brand__name">HILLKOFF</div>
+        <div class="hk-brand__sub">Knowledge Center</div>
+      </div>
+    </div>
+    <nav>
+      <ul>
+        <li class="hk-navitem" onclick="location.href='index.html'">
+          <span class="hk-navitem__icon" data-icon="dashboard"></span>
+          <span>Dashboard</span>
+        </li>
+        <li class="hk-navitem" onclick="location.href='add-machine.html'">
+          <span class="hk-navitem__icon" data-icon="add"></span>
+          <span>เพิ่มเครื่องจักร</span>
+        </li>
+        <li class="hk-navitem is-active">
+          <span class="hk-navitem__icon" data-icon="bot"></span>
+          <span>HILLKOFFBOT AI</span>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <div>
+    <header class="hk-navbar">
+      <div class="hk-breadcrumb" style="margin:0;">
+        <a href="index.html">Dashboard</a>
+        <span class="hk-breadcrumb__sep">/</span>
+        <span style="color:var(--hk-text);">HILLKOFFBOT AI</span>
+      </div>
+      <div class="hk-navbar__spacer"></div>
+      <div class="hk-avatar">HK</div>
+    </header>
+
+    <main class="hk-content" style="max-width:780px;">
+      <div class="hk-section-head">
+        <div>
+          <div class="hk-eyebrow">HILLKOFFBOT AI</div>
+          <h1>ถามข้อมูลเครื่องจักร</h1>
+          <p style="margin-top:4px;">ตอบคำถามจากฐานข้อมูลเท่านั้น — ไม่วิเคราะห์งานซ่อม</p>
+        </div>
+      </div>
+      <div id="hk-ai-root"></div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api-client.js"></script>
+<script src="../js/machines-data.js"></script>
+<script src="../js/ai-bot.js"></script>
+<script src="../js/ai-assistant.js"></script>
+</body>
+</html>

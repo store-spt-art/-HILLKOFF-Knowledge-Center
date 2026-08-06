@@ -1,0 +1,41 @@
+/* ---------- Category chips ---------- */
+.hk-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 22px; }
+.hk-chip{
+  padding: 7px 14px; border-radius: 999px; border:1px solid var(--hk-border);
+  background: var(--hk-surface); color: var(--hk-text-dim); font-size: 13px; font-weight:600;
+  cursor:pointer; transition: all .15s; display:flex; align-items:center; gap:6px;
+}
+.hk-chip:hover{ border-color: var(--hk-gold-dim); color: var(--hk-text); }
+.hk-chip.is-active{ background: var(--hk-gold); border-color: var(--hk-gold); color:#1B1509; }
+
+/* ---------- Grid ---------- */
+.hk-grid{
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px;
+}
+
+/* ---------- Machine card ---------- */
+.hk-mcard{
+  background: var(--hk-surface); border: 1px solid var(--hk-border); border-radius: var(--hk-radius-lg);
+  overflow:hidden; cursor:pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
+  display:flex; flex-direction:column;
+}
+.hk-mcard:hover{ transform: translateY(-3px); border-color: var(--hk-gold-dim); box-shadow: var(--hk-shadow-2); }
+.hk-mcard__media{
+  aspect-ratio: 4/3; background: var(--hk-surface-2); display:flex; align-items:center; justify-content:center;
+  color: var(--hk-text-dim); position:relative; overflow:hidden;
+}
+.hk-mcard__media img{ width:100%; height:100%; object-fit: cover; }
+.hk-mcard__media svg{ width:38px; height:38px; opacity:.5; }
+.hk-mcard__badge{ position:absolute; top:10px; left:10px; }
+.hk-mcard__body{ padding: 14px 16px 16px; display:flex; flex-direction:column; gap:4px; flex:1; }
+.hk-mcard__cat{ font-size:11px; color: var(--hk-gold); text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+.hk-mcard__name{ font-family: var(--hk-font-display); font-size: 16px; font-weight:600; }
+.hk-mcard__meta{ font-size: 12.5px; color: var(--hk-text-dim); }
+.hk-mcard__id{ margin-top:6px; font-family: var(--hk-font-mono); font-size:11px; color: var(--hk-text-dim); }
+
+/* ---------- Skeleton grid ---------- */
+.hk-skeleton-card{ height: 230px; }
+
+@media (max-width: 640px){
+  .hk-grid{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+}

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · HILLKOFF Coffee Machine Knowledge Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+
+<button class="hk-sidebar__toggle" data-hk-sidebar-toggle aria-label="เปิดเมนู">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+<div class="hk-backdrop" data-hk-backdrop></div>
+
+<div class="hk-app">
+  <aside class="hk-sidebar">
+    <div class="hk-brand">
+      <div class="hk-brand__mark">HK</div>
+      <div>
+        <div class="hk-brand__name">HILLKOFF</div>
+        <div class="hk-brand__sub">Knowledge Center</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="hk-navgroup__label">หมวดหมู่</div>
+      <ul id="hk-sidebar-categories">
+        <li class="hk-navitem is-active" data-category="all">
+          <span class="hk-navitem__icon" data-icon="dashboard"></span>
+          <span>ทั้งหมด</span>
+          <span class="hk-navitem__count" data-count="all"></span>
+        </li>
+        <!-- category items injected by dashboard.js -->
+      </ul>
+    </nav>
+
+    <nav>
+      <div class="hk-navgroup__label">การจัดการ</div>
+      <ul>
+        <li class="hk-navitem" onclick="location.href='add-machine.html'">
+          <span class="hk-navitem__icon" data-icon="add"></span>
+          <span>เพิ่มเครื่องจักร</span>
+        </li>
+        <li class="hk-navitem" onclick="location.href='ai-assistant.html'">
+          <span class="hk-navitem__icon" data-icon="bot"></span>
+          <span>HILLKOFFBOT AI</span>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="hk-sidebar__footer">
+      <p style="font-size:11.5px; margin:0; color:var(--hk-text-dim);">ฐานข้อมูลเครื่องจักร<br>ไม่ใช่ระบบซ่อม / สต๊อก / ขาย</p>
+    </div>
+  </aside>
+
+  <div>
+    <header class="hk-navbar">
+      <div class="hk-search">
+        <span data-icon="search"></span>
+        <input type="text" id="hk-search-input" placeholder="ค้นหาเครื่องจักร... (กด / เพื่อค้นหา)">
+        <span class="hk-search__kbd">/</span>
+      </div>
+      <div class="hk-navbar__spacer"></div>
+      <div class="hk-avatar">HK</div>
+    </header>
+
+    <main class="hk-content">
+      <div class="hk-section-head">
+        <div>
+          <div class="hk-eyebrow">Dashboard</div>
+          <h1 id="hk-page-title">เครื่องจักรทั้งหมด</h1>
+        </div>
+        <a href="add-machine.html" class="hk-btn hk-btn--primary">
+          <span data-icon="add"></span> เพิ่มเครื่องจักร
+        </a>
+      </div>
+
+      <div class="hk-chips" id="hk-chips"></div>
+
+      <div id="hk-grid" class="hk-grid"></div>
+      <div id="hk-empty" class="hk-empty" style="display:none;">
+        <div class="hk-empty__icon">🔍</div>
+        <h3>ไม่พบเครื่องจักรที่ค้นหา</h3>
+        <p>ลองค้นหาด้วยคำอื่น หรือเลือกดูหมวดหมู่อื่น</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../js/utils.js"></script>
+<script src="../js/api-client.js"></script>
+<script src="../js/machines-data.js"></script>
+<script src="../js/dashboard.js"></script>
+</body>
+</html>

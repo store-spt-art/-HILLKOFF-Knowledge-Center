@@ -1,0 +1,815 @@
+/* =========================================================
+   HILLKOFF · machine-detail.js
+   ========================================================= */
+
+// Which tab stays selected across re-renders triggered by edits.
+let HK_ACTIVE_TAB = 'overview';
+// Toggle-based edit mode for the two "whole panel" forms.
+let HK_EDIT_STATE = { overview: false, specification: false };
+// Add/edit state for the Parts List inline form.
+let HK_PART_FORM_STATE = { mode: null, partId: null };
+
+function hkRenderSidebarCategoriesDetail(activeCategory){
+  const list = document.getElementById('hk-sidebar-categories');
+  Object.entries(HK_CATEGORIES).forEach(([key, meta]) => {
+    const li = document.createElement('li');
+    li.className = 'hk-navitem' + (key === activeCategory ? ' is-active' : '');
+    li.innerHTML = `<span class="hk-navitem__icon">${hkIcon(meta.icon)}</span><span>${meta.label}</span>`;
+    li.addEventListener('click', () => { window.location.href = `index.html?filter=${key}`; });
+    list.appendChild(li);
+  });
+  document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = hkIcon(el.getAttribute('data-icon')));
+}
+
+function hkRenderBreadcrumb(machine){
+  const meta = HK_CATEGORIES[machine.category] || {};
+  document.getElementById('hk-breadcrumb').innerHTML = `
+    <a href="index.html">Dashboard</a>
+    <span class="hk-breadcrumb__sep">/</span>
+    <a href="index.html?filter=${machine.category}">${meta.label || machine.category}</a>
+    <span class="hk-breadcrumb__sep">/</span>
+    <span style="color:var(--hk-text);">${hkEscapeHtml(machine.name)}</span>`;
+}
+
+function hkRenderHeader(machine){
+  const meta = HK_CATEGORIES[machine.category] || {};
+  const media = machine.coverImage
+    ? `<img src="${hkDriveImgUrl(machine.coverImage)}" alt="${hkEscapeHtml(machine.name)}">`
+    : hkIcon(meta.icon);
+  return `
+    <div class="hk-dheader">
+      <div class="hk-dheader__media">${media}</div>
+      <div class="hk-dheader__body">
+        <div class="hk-dheader__top">
+          <span class="hk-badge hk-badge--gold">${meta.label || machine.category}</span>
+          <span class="hk-badge mono">${machine.id}</span>
+          <span id="hk-header-approval-badge">${hkApprovalStatusBadgeHtml(machine)}</span>
+        </div>
+        <h1 class="hk-dheader__name">${hkEscapeHtml(machine.name)}</h1>
+        <p style="margin:0;">${hkEscapeHtml(machine.type || '')}</p>
+        <div class="hk-dheader__meta">
+          <div class="hk-dheader__meta-item">
+            <div class="hk-dheader__meta-label">ยี่ห้อ</div>
+            <div class="hk-dheader__meta-value">${hkEscapeHtml(machine.brand || '-')}</div>
+          </div>
+          <div class="hk-dheader__meta-item">
+            <div class="hk-dheader__meta-label">รุ่น</div>
+            <div class="hk-dheader__meta-value">${hkEscapeHtml(machine.model || '-')}</div>
+          </div>
+          <div class="hk-dheader__meta-item">
+            <div class="hk-dheader__meta-label">ประเภท</div>
+            <div class="hk-dheader__meta-value">${hkEscapeHtml(machine.type || '-')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+const HK_TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'specification', label: 'Specification' },
+  { key: 'internal', label: 'Internal Structure' },
+  { key: 'parts', label: 'Parts List' },
+  { key: 'gallery', label: 'Gallery' },
+  { key: 'documents', label: 'Documents' },
+  { key: 'ai', label: 'AI Assistant' },
+];
+
+function hkPanelOverview(m){
+  if(HK_EDIT_STATE.overview) return hkOverviewEditFormHtml(m);
+  return `
+    <div class="hk-panel-actionbar">
+      <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-edit-overview>✎ แก้ไขข้อมูลเครื่อง</button>
+    </div>
+    <p style="max-width:720px;">${hkEscapeHtml(m.description || 'ยังไม่มีคำอธิบายสำหรับเครื่องจักรนี้')}</p>
+    <div class="hk-kv-grid">
+      <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ชื่อเครื่อง</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.name)}</div></div>
+      <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ยี่ห้อ</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.brand || '-')}</div></div>
+      <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">รุ่น</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.model || '-')}</div></div>
+      <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ประเภท</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.type || '-')}</div></div>
+    </div>`;
+}
+
+function hkOverviewEditFormHtml(m){
+  const catOptions = Object.entries(HK_CATEGORIES).map(([key, meta]) =>
+    `<option value="${key}" ${m.category === key ? 'selected' : ''}>${meta.label}</option>`).join('');
+  const coverPreview = m.coverImage
+    ? `<div class="hk-cover-preview"><img src="${hkDriveImgUrl(m.coverImage)}" alt=""><button type="button" class="hk-cover-preview__remove" data-edit-cover-remove>✕</button></div>`
+    : '';
+  return `
+    <div style="max-width:640px;">
+      <div class="hk-row2">
+        <div class="hk-field">
+          <label class="hk-field__label">หมวดหมู่</label>
+          <select class="hk-select" id="hk-edit-category">${catOptions}</select>
+        </div>
+        <div class="hk-field">
+          <label class="hk-field__label">ชื่อเครื่อง</label>
+          <input class="hk-input" id="hk-edit-name" type="text" value="${hkEscapeHtml(m.name)}">
+        </div>
+      </div>
+      <div class="hk-row2">
+        <div class="hk-field">
+          <label class="hk-field__label">ยี่ห้อ</label>
+          <input class="hk-input" id="hk-edit-brand" type="text" value="${hkEscapeHtml(m.brand || '')}">
+        </div>
+        <div class="hk-field">
+          <label class="hk-field__label">รุ่น</label>
+          <input class="hk-input" id="hk-edit-model" type="text" value="${hkEscapeHtml(m.model || '')}">
+        </div>
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">ประเภท</label>
+        <input class="hk-input" id="hk-edit-type" type="text" value="${hkEscapeHtml(m.type || '')}">
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">คำอธิบาย</label>
+        <textarea class="hk-textarea" id="hk-edit-description">${hkEscapeHtml(m.description || '')}</textarea>
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">รูปหน้าปก</label>
+        ${coverPreview}
+        <label class="hk-dropzone" style="display:block;">
+          <div class="hk-dropzone__icon">${hkIcon('image')}</div>
+          <div>คลิกเพื่อเลือกรูปใหม่</div>
+          <input type="file" id="hk-edit-cover-input" accept="image/*">
+        </label>
+      </div>
+      <div class="hk-wizard-nav">
+        <button type="button" class="hk-btn hk-btn--ghost" id="hk-edit-overview-cancel">ยกเลิก</button>
+        <button type="button" class="hk-btn hk-btn--primary" id="hk-edit-overview-save">บันทึก</button>
+      </div>
+    </div>`;
+}
+
+function hkWireOverviewPanel(machine){
+  const panel = document.querySelector('.hk-tabpanel[data-panel="overview"]');
+  if(!panel) return;
+  let pendingRemoveCover = false;
+
+  const editBtn = panel.querySelector('[data-edit-overview]');
+  if(editBtn) editBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.overview = true;
+    hkRerenderPanel(machine, 'overview');
+  });
+
+  const cancelBtn = panel.querySelector('#hk-edit-overview-cancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.overview = false;
+    hkRerenderPanel(machine, 'overview');
+  });
+
+  const removeCoverBtn = panel.querySelector('[data-edit-cover-remove]');
+  if(removeCoverBtn) removeCoverBtn.addEventListener('click', () => {
+    pendingRemoveCover = true;
+    removeCoverBtn.closest('.hk-cover-preview').style.display = 'none';
+  });
+
+  const saveBtn = panel.querySelector('#hk-edit-overview-save');
+  if(saveBtn) saveBtn.addEventListener('click', async () => {
+    const name = panel.querySelector('#hk-edit-name').value.trim();
+    if(!name){ hkToast('กรุณาระบุชื่อเครื่อง'); return; }
+    const category = panel.querySelector('#hk-edit-category').value;
+    const brand = panel.querySelector('#hk-edit-brand').value.trim();
+    const model = panel.querySelector('#hk-edit-model').value.trim();
+    const type = panel.querySelector('#hk-edit-type').value.trim();
+    const description = panel.querySelector('#hk-edit-description').value.trim();
+    const fileInput = panel.querySelector('#hk-edit-cover-input');
+    const file = fileInput.files && fileInput.files[0];
+    try{
+      let coverImage;
+      if(file){
+        const uploadRes = await hkApiUploadFile(file, machine.id, name, 'Cover');
+        if(uploadRes && uploadRes.error) throw new Error(uploadRes.error);
+        coverImage = uploadRes.url;
+      }else if(pendingRemoveCover){
+        coverImage = '';
+      }
+      await updateMachineInfo(machine.id, { category, name, brand, model, type, description, coverImage });
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      HK_EDIT_STATE.overview = false;
+      hkRenderBreadcrumb(machine);
+      hkRenderDetail(machine);
+    }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
+  });
+}
+
+function hkPanelSpecification(m){
+  if(HK_EDIT_STATE.specification) return hkSpecEditFormHtml(m);
+  const rows = HK_SPEC_FIELDS.map(f => `
+    <tr><td>${f.label}</td><td>${hkEscapeHtml(m.specification?.[f.key] || '-')}</td></tr>`).join('');
+  return `
+    <div class="hk-panel-actionbar">
+      <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-edit-spec>✎ แก้ไข Specification</button>
+    </div>
+    <table class="hk-spec-table"><tbody>${rows}</tbody></table>`;
+}
+
+function hkSpecEditFormHtml(m){
+  const rows = HK_SPEC_FIELDS.map(f => `
+    <tr>
+      <td>${f.label}</td>
+      <td><input class="hk-input" style="font-family:var(--hk-font-mono);" data-spec-field="${f.key}" value="${hkEscapeHtml(m.specification?.[f.key] || '')}"></td>
+    </tr>`).join('');
+  return `
+    <table class="hk-spec-table"><tbody>${rows}</tbody></table>
+    <div class="hk-wizard-nav">
+      <button type="button" class="hk-btn hk-btn--ghost" data-edit-spec-cancel>ยกเลิก</button>
+      <button type="button" class="hk-btn hk-btn--primary" data-edit-spec-save>บันทึก</button>
+    </div>`;
+}
+
+function hkWireSpecificationPanel(machine){
+  const panel = document.querySelector('.hk-tabpanel[data-panel="specification"]');
+  if(!panel) return;
+
+  const editBtn = panel.querySelector('[data-edit-spec]');
+  if(editBtn) editBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.specification = true;
+    hkRerenderPanel(machine, 'specification');
+  });
+
+  const cancelBtn = panel.querySelector('[data-edit-spec-cancel]');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.specification = false;
+    hkRerenderPanel(machine, 'specification');
+  });
+
+  const saveBtn = panel.querySelector('[data-edit-spec-save]');
+  if(saveBtn) saveBtn.addEventListener('click', async () => {
+    const spec = {};
+    panel.querySelectorAll('[data-spec-field]').forEach(input => { spec[input.dataset.specField] = input.value.trim(); });
+    try{
+      await updateSpecification(machine.id, spec);
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      HK_EDIT_STATE.specification = false;
+      hkRerenderPanel(machine, 'specification');
+    }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
+  });
+}
+
+function hkImageGroupsHtml(groups, data, section){
+  return groups.map(g => {
+    const items = (data?.[g.key] || []);
+    const tiles = items.map(url => `
+      <div class="hk-imgtile">
+        <img src="${hkDriveImgUrl(url)}" alt="">
+        <button type="button" class="hk-thumb__remove" data-img-remove data-section="${section}" data-group="${g.key}" data-url="${hkEscapeHtml(url)}" aria-label="ลบรูป">✕</button>
+      </div>`).join('');
+    const addTile = `
+      <label class="hk-imgtile hk-imgtile--add">
+        ${hkIcon('add')}
+        <input type="file" accept="image/*" multiple data-img-add data-section="${section}" data-group="${g.key}">
+      </label>`;
+    return `
+      <div class="hk-imggroup">
+        <div class="hk-imggroup__label">${g.label}</div>
+        <div class="hk-imggroup__grid">${tiles}${addTile}</div>
+      </div>`;
+  }).join('');
+}
+
+function hkWireImagePanel(machine, panelKey){
+  const panel = document.querySelector(`.hk-tabpanel[data-panel="${panelKey}"]`);
+  if(!panel) return;
+
+  panel.querySelectorAll('[data-img-add]').forEach(input => {
+    input.addEventListener('change', async () => {
+      const section = input.dataset.section;
+      const group = input.dataset.group;
+      const files = Array.from(input.files || []);
+      if(!files.length) return;
+      for(const file of files){
+        try{ await addImageToMachine(machine.id, section, group, file); }
+        catch(err){ hkToast(err.message || 'อัปโหลดไม่สำเร็จ'); }
+      }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, panelKey);
+    });
+  });
+
+  panel.querySelectorAll('[data-img-remove]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try{ await removeImageFromMachine(machine.id, btn.dataset.section, btn.dataset.group, btn.dataset.url); }
+      catch(err){ hkToast(err.message || 'ลบไม่สำเร็จ'); }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, panelKey);
+    });
+  });
+}
+
+function hkPanelInternal(m){
+  return `
+    <div class="hk-internal-note">🔒 Internal Use Only — สำหรับทีมช่างภายในเท่านั้น (เป็นเพียงรูปประกอบ ไม่มีระบบซ่อม)</div>
+    ${hkImageGroupsHtml(HK_INTERNAL_GROUPS, m.internalImages, 'Internal')}
+    <div id="hk-approval-root"></div>`;
+}
+
+/* ---------- Machine evaluation / approval-to-sell ---------- */
+
+function hkApprovalStatusBadgeHtml(m){
+  const approved = hkApprovalStatus(m) === 'approved';
+  return `<span class="hk-approval-status hk-approval-status--${approved ? 'approved' : 'pending'}">
+    ${approved ? '✓ อนุมัตินำเข้าขายแล้ว' : '⏳ รอการอนุมัติ'}
+  </span>`;
+}
+
+function hkApprovalDeptHtml(m, dept){
+  const sigs = (m.approval?.departments?.[dept.key]) || [];
+  const locked = hkIsApprovalLocked(m);
+  const complete = sigs.length >= dept.required;
+  const list = sigs.length
+    ? sigs.map((s, i) => {
+        const nameLine = dept.extraField && s[dept.extraField.key]
+          ? `${hkEscapeHtml(s.name)} <span class="hk-approval-sig__subdept">(${hkEscapeHtml(s[dept.extraField.key])})</span>`
+          : hkEscapeHtml(s.name);
+        const commentLine = s.comment
+          ? `<div class="hk-approval-sig__comment">${hkEscapeHtml(s.comment)}</div>`
+          : '';
+        return `
+        <div class="hk-approval-sig">
+          <div class="hk-approval-sig__row">
+            <span><span class="hk-approval-sig__name">${nameLine}</span> <span class="hk-approval-sig__date">${hkEscapeHtml(s.date)}</span></span>
+            ${locked ? '' : `<button type="button" class="hk-approval-sig__remove" data-approval-remove data-dept="${dept.key}" data-index="${i}" aria-label="ลบรายชื่อ">✕</button>`}
+          </div>
+          ${commentLine}
+        </div>`;
+      }).join('')
+    : `<div class="hk-approval-sig-empty">ยังไม่มีผู้ลงชื่อ</div>`;
+  const need = dept.atLeast ? `อย่างน้อย ${dept.required} คน` : `${dept.required} คน`;
+  const extraInput = dept.extraField
+    ? `<input type="text" placeholder="${dept.extraField.label}" data-approval-extra>`
+    : '';
+  const form = locked ? '' : `
+    <div class="hk-approval-dept__form" data-approval-form data-dept="${dept.key}">
+      <input type="text" placeholder="ชื่อผู้ประเมิน" data-approval-name>
+      ${extraInput}
+      <input type="date" data-approval-date>
+      <textarea placeholder="ข้อความการประเมิน" data-approval-comment rows="2"></textarea>
+      <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-approval-add data-dept="${dept.key}">+ ลงชื่อ</button>
+    </div>`;
+  return `
+    <div class="hk-approval-dept${complete ? ' is-complete' : ''}">
+      <div class="hk-approval-dept__head">
+        <div class="hk-approval-dept__label">${dept.label}</div>
+        <div class="hk-approval-dept__count${complete ? ' is-complete' : ''}">${sigs.length}/${need}</div>
+      </div>
+      <div class="hk-approval-sig-list">${list}</div>
+      ${form}
+    </div>`;
+}
+
+function hkApprovalMdHtml(m){
+  const md = m.approval?.mdApproval;
+  if(md){
+    return `
+      <div class="hk-approval-md is-approved">
+        <div class="hk-approval-md__label">${HK_MD_APPROVAL_LABEL}</div>
+        <div class="hk-approval-md__signed">✅ อนุมัติโดย <strong>${hkEscapeHtml(md.name)}</strong> <span class="hk-approval-sig__date">${hkEscapeHtml(md.date)}</span></div>
+        ${md.comment ? `<div class="hk-approval-sig__comment">${hkEscapeHtml(md.comment)}</div>` : ''}
+      </div>`;
+  }
+  const ready = hkApprovalDepartmentsComplete(m.approval);
+  return `
+    <div class="hk-approval-md">
+      <div class="hk-approval-md__label">${HK_MD_APPROVAL_LABEL}</div>
+      <p class="hk-approval-md__hint">${ready ? 'ทุกแผนกลงชื่อครบแล้ว พร้อมให้ผู้บริหาร/MD อนุมัตินำเข้าขาย' : 'ต้องรอให้ทุกแผนกด้านบนลงชื่อครบก่อน จึงจะอนุมัติได้'}</p>
+      <div class="hk-approval-dept__form" data-approval-md-form>
+        <input type="text" placeholder="ชื่อผู้อนุมัติ" data-approval-md-name ${ready ? '' : 'disabled'}>
+        <input type="date" data-approval-md-date ${ready ? '' : 'disabled'}>
+        <textarea placeholder="ข้อความการประเมิน / ความเห็นการอนุมัติ" data-approval-md-comment rows="2" ${ready ? '' : 'disabled'}></textarea>
+        <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-approval-md-approve ${ready ? '' : 'disabled'}>อนุมัตินำเข้าขาย</button>
+      </div>
+    </div>`;
+}
+
+function hkApprovalSectionHtml(m){
+  const locked = hkIsApprovalLocked(m);
+  const lockedNote = locked
+    ? `<div class="hk-approval-locked-note">🔒 อนุมัติแล้ว — ไม่สามารถแก้ไขรายชื่อผู้ประเมินได้อีก</div>`
+    : '';
+  return `
+    <div class="hk-approval">
+      <div class="hk-approval__head">
+        <h3 class="hk-approval__title">การประเมิน &amp; อนุมัตินำเข้าขาย</h3>
+        ${hkApprovalStatusBadgeHtml(m)}
+      </div>
+      ${lockedNote}
+      <div class="hk-approval-grid">
+        ${HK_APPROVAL_DEPARTMENTS.map(d => hkApprovalDeptHtml(m, d)).join('')}
+      </div>
+      ${hkApprovalMdHtml(m)}
+    </div>`;
+}
+
+function hkRenderApprovalSection(machine){
+  const root = document.getElementById('hk-approval-root');
+  if(!root) return;
+  root.innerHTML = hkApprovalSectionHtml(machine);
+  hkWireApprovalSection(machine);
+}
+
+function hkWireApprovalSection(machine){
+  const root = document.getElementById('hk-approval-root');
+  if(!root) return;
+
+  root.querySelectorAll('[data-approval-add]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const dept = btn.dataset.dept;
+      const form = root.querySelector(`[data-approval-form][data-dept="${dept}"]`);
+      const name = form.querySelector('[data-approval-name]').value.trim();
+      const date = form.querySelector('[data-approval-date]').value;
+      const comment = form.querySelector('[data-approval-comment]').value.trim();
+      const extraEl = form.querySelector('[data-approval-extra]');
+      const deptMeta = HK_APPROVAL_DEPARTMENTS.find(d => d.key === dept);
+      if(!name){ hkToast('กรุณาระบุชื่อผู้ประเมิน'); return; }
+      if(extraEl && deptMeta?.extraField && !extraEl.value.trim()){ hkToast(`กรุณาระบุ${deptMeta.extraField.label}`); return; }
+      const fields = { name, date, comment };
+      if(extraEl && deptMeta?.extraField) fields[deptMeta.extraField.key] = extraEl.value.trim();
+      try{
+        await addApprovalSignature(machine.id, dept, fields);
+        if(HK_LAST_APPROVAL_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+        hkRenderApprovalSection(machine);
+      }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+    });
+  });
+
+  root.querySelectorAll('[data-approval-remove]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const dept = btn.dataset.dept;
+      const index = parseInt(btn.dataset.index, 10);
+      try{
+        await removeApprovalSignature(machine.id, dept, index);
+        hkRenderApprovalSection(machine);
+      }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+    });
+  });
+
+  const mdBtn = root.querySelector('[data-approval-md-approve]');
+  if(mdBtn){
+    mdBtn.addEventListener('click', async () => {
+      const name = root.querySelector('[data-approval-md-name]').value.trim();
+      const date = root.querySelector('[data-approval-md-date]').value;
+      const comment = root.querySelector('[data-approval-md-comment]').value.trim();
+      if(!name){ hkToast('กรุณาระบุชื่อผู้อนุมัติ'); return; }
+      if(!confirm('ยืนยันการอนุมัตินำเข้าขาย? หลังจากนี้จะไม่สามารถแก้ไขรายชื่อผู้ประเมินได้อีก')) return;
+      try{
+        await setMdApproval(machine.id, name, date, comment);
+        if(HK_LAST_APPROVAL_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+        hkRenderApprovalSection(machine);
+        hkUpdateHeaderApprovalBadge(machine);
+      }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+    });
+  }
+}
+
+// Keeps the top badge next to the machine name in sync after MD approval,
+// without re-rendering the whole detail page (which would reset tabs).
+function hkUpdateHeaderApprovalBadge(machine){
+  const badge = document.getElementById('hk-header-approval-badge');
+  if(badge) badge.innerHTML = hkApprovalStatusBadgeHtml(machine);
+}
+
+function hkPanelGallery(m){
+  return hkImageGroupsHtml(HK_GALLERY_GROUPS, m.gallery, 'Gallery');
+}
+
+function hkPanelParts(m){
+  const rows = (m.parts || []).map(p => `
+    <tr data-part-id="${p.id || ''}">
+      <td><div class="hk-parts-thumb">${p.image ? `<img src="${hkDriveImgUrl(p.image)}" alt="">` : hkIcon('image')}</div></td>
+      <td>${hkEscapeHtml(p.name)}</td>
+      <td>${hkEscapeHtml(p.brand || '-')}</td>
+      <td>${hkEscapeHtml(p.model || '-')}</td>
+      <td>${hkEscapeHtml(p.note || '-')}</td>
+      <td style="white-space:nowrap;">
+        <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-part-edit data-id="${p.id || ''}">แก้ไข</button>
+        <button type="button" class="hk-btn hk-btn--danger hk-btn--sm" data-part-delete data-id="${p.id || ''}">ลบ</button>
+      </td>
+    </tr>`).join('');
+  const table = (m.parts && m.parts.length)
+    ? `<table class="hk-parts-table"><thead><tr><th>รูป</th><th>ชื่ออะไหล่</th><th>ยี่ห้อ</th><th>รุ่น</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    : `<div class="hk-empty"><div class="hk-empty__icon">🔧</div><h3>ยังไม่มีรายการอะไหล่</h3></div>`;
+  return `
+    <div class="hk-panel-actionbar">
+      <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-part-add-toggle">+ เพิ่มอะไหล่</button>
+    </div>
+    ${hkPartFormHtml(m)}
+    ${table}`;
+}
+
+function hkPartFormHtml(m){
+  if(!HK_PART_FORM_STATE.mode) return '';
+  const editing = HK_PART_FORM_STATE.mode === 'edit';
+  const part = editing ? (m.parts || []).find(p => p.id === HK_PART_FORM_STATE.partId) : null;
+  const preview = part && part.image
+    ? `<div class="hk-cover-preview" style="width:80px;height:80px;"><img src="${hkDriveImgUrl(part.image)}" alt=""></div>` : '';
+  return `
+    <div class="hk-review-card" id="hk-part-form">
+      <h4>${editing ? 'แก้ไขอะไหล่' : 'เพิ่มอะไหล่'}</h4>
+      <div class="hk-row2">
+        <div class="hk-field"><label class="hk-field__label">ชื่ออะไหล่</label><input class="hk-input" id="hk-part-name" value="${hkEscapeHtml(part?.name || '')}"></div>
+        <div class="hk-field"><label class="hk-field__label">ยี่ห้อ</label><input class="hk-input" id="hk-part-brand" value="${hkEscapeHtml(part?.brand || '')}"></div>
+      </div>
+      <div class="hk-row2">
+        <div class="hk-field"><label class="hk-field__label">รุ่น</label><input class="hk-input" id="hk-part-model" value="${hkEscapeHtml(part?.model || '')}"></div>
+        <div class="hk-field"><label class="hk-field__label">หมายเหตุ</label><input class="hk-input" id="hk-part-note" value="${hkEscapeHtml(part?.note || '')}"></div>
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">รูปอะไหล่</label>
+        ${preview}
+        <input type="file" accept="image/*" id="hk-part-image">
+      </div>
+      <div class="hk-wizard-nav">
+        <button type="button" class="hk-btn hk-btn--ghost" id="hk-part-form-cancel">ยกเลิก</button>
+        <button type="button" class="hk-btn hk-btn--primary" id="hk-part-form-save">บันทึก</button>
+      </div>
+    </div>`;
+}
+
+function hkWirePartsPanel(machine){
+  const panel = document.querySelector('.hk-tabpanel[data-panel="parts"]');
+  if(!panel) return;
+
+  const addToggle = panel.querySelector('[data-part-add-toggle]');
+  if(addToggle) addToggle.addEventListener('click', () => {
+    HK_PART_FORM_STATE = { mode: 'add', partId: null };
+    hkRerenderPanel(machine, 'parts');
+  });
+
+  panel.querySelectorAll('[data-part-edit]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      HK_PART_FORM_STATE = { mode: 'edit', partId: btn.dataset.id };
+      hkRerenderPanel(machine, 'parts');
+    });
+  });
+
+  panel.querySelectorAll('[data-part-delete]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if(!confirm('ลบอะไหล่นี้?')) return;
+      try{ await removePartFromMachine(machine.id, btn.dataset.id); }
+      catch(err){ hkToast(err.message || 'ลบไม่สำเร็จ'); }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, 'parts');
+    });
+  });
+
+  const cancelBtn = panel.querySelector('#hk-part-form-cancel');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => {
+    HK_PART_FORM_STATE = { mode: null, partId: null };
+    hkRerenderPanel(machine, 'parts');
+  });
+
+  const saveBtn = panel.querySelector('#hk-part-form-save');
+  if(saveBtn) saveBtn.addEventListener('click', async () => {
+    const name = panel.querySelector('#hk-part-name').value.trim();
+    if(!name){ hkToast('กรุณาระบุชื่ออะไหล่'); return; }
+    const brand = panel.querySelector('#hk-part-brand').value.trim();
+    const model = panel.querySelector('#hk-part-model').value.trim();
+    const note = panel.querySelector('#hk-part-note').value.trim();
+    const fileInput = panel.querySelector('#hk-part-image');
+    const file = fileInput.files && fileInput.files[0];
+    try{
+      let imageUrl;
+      if(file){
+        const uploadRes = await hkApiUploadFile(file, machine.id, machine.name, 'Parts');
+        if(uploadRes && uploadRes.error) throw new Error(uploadRes.error);
+        imageUrl = uploadRes.url;
+      }
+      if(HK_PART_FORM_STATE.mode === 'add'){
+        await addPartToMachine(machine.id, { name, brand, model, note, imageUrl });
+      }else{
+        const fields = { name, brand, model, note };
+        if(imageUrl !== undefined) fields.imageUrl = imageUrl;
+        await updatePartInMachine(machine.id, HK_PART_FORM_STATE.partId, fields);
+      }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      HK_PART_FORM_STATE = { mode: null, partId: null };
+      hkRerenderPanel(machine, 'parts');
+    }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
+  });
+
+  panel.querySelectorAll('[data-part-id]').forEach(row => {
+    if(!row.dataset.partId) return;
+    row.addEventListener('click', (e) => {
+      if(e.target.closest('button')) return;
+      hkOpenPartModal(machine, row.dataset.partId);
+    });
+  });
+}
+
+function hkPanelDocuments(m){
+  const items = HK_DOCUMENT_TYPES.map(t => {
+    const doc = m.documents?.[t.key];
+    const body = `
+        <div class="hk-doc-item__icon">${hkIcon('doc')}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="hk-doc-item__name">${t.label}</div>
+          <div class="hk-doc-item__status">${doc ? hkEscapeHtml(doc.name || 'มีไฟล์แนบ') : 'ยังไม่มีไฟล์'}</div>
+        </div>`;
+    const actions = doc
+      ? `<div style="display:flex;gap:6px;flex-shrink:0;">
+           ${doc.url ? `<a href="${doc.url}" target="_blank" rel="noopener" class="hk-btn hk-btn--ghost hk-btn--sm">เปิด</a>` : ''}
+           <label class="hk-btn hk-btn--ghost hk-btn--sm" style="cursor:pointer;">แทนที่<input type="file" style="display:none;" data-doc-replace data-doctype="${t.key}"></label>
+           <button type="button" class="hk-btn hk-btn--danger hk-btn--sm" data-doc-delete data-doctype="${t.key}">ลบ</button>
+         </div>`
+      : `<label class="hk-btn hk-btn--ghost hk-btn--sm" style="cursor:pointer;flex-shrink:0;">อัปโหลด<input type="file" style="display:none;" data-doc-upload data-doctype="${t.key}"></label>`;
+    return `<div class="hk-doc-item">${body}${actions}</div>`;
+  }).join('');
+  return `<div class="hk-doc-list">${items}</div>`;
+}
+
+function hkWireDocumentsPanel(machine){
+  const panel = document.querySelector('.hk-tabpanel[data-panel="documents"]');
+  if(!panel) return;
+
+  panel.querySelectorAll('[data-doc-upload], [data-doc-replace]').forEach(input => {
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if(!file) return;
+      const docType = input.dataset.doctype;
+      try{ await setDocumentOnMachine(machine.id, docType, file); }
+      catch(err){ hkToast(err.message || 'อัปโหลดไม่สำเร็จ'); }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, 'documents');
+    });
+  });
+
+  panel.querySelectorAll('[data-doc-delete]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(!confirm('ลบเอกสารนี้?')) return;
+      try{ await removeDocumentFromMachine(machine.id, btn.dataset.doctype); }
+      catch(err){ hkToast(err.message || 'ลบไม่สำเร็จ'); }
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, 'documents');
+    });
+  });
+}
+
+function hkPanelAI(m){
+  return `
+    <div class="hk-ai-panel">
+      <div class="hk-ai-panel__log" id="hk-ai-log">
+        <div class="hk-ai-msg hk-ai-msg--bot">สวัสดีครับ ผมคือ HILLKOFFBOT ถามข้อมูลของ <strong>${hkEscapeHtml(m.name)}</strong> ได้เลยครับ เช่น Pump, Boiler, อะไหล่ หรือเอกสารต่าง ๆ</div>
+      </div>
+      <div class="hk-ai-panel__suggestions">
+        <button class="hk-ai-suggestion" data-q="ใช้ Pump อะไร">ใช้ Pump อะไร</button>
+        <button class="hk-ai-suggestion" data-q="ใช้ Boiler กี่ลิตร">ใช้ Boiler กี่ลิตร</button>
+        <button class="hk-ai-suggestion" data-q="ขอดู Wiring Diagram">ขอดู Wiring Diagram</button>
+      </div>
+      <div class="hk-ai-panel__input">
+        <input type="text" id="hk-ai-input" placeholder="พิมพ์คำถามเกี่ยวกับ ${hkEscapeHtml(m.name)}...">
+        <button class="hk-btn hk-btn--primary" id="hk-ai-send">ส่ง</button>
+      </div>
+    </div>`;
+}
+
+const HK_PANEL_RENDERERS = {
+  overview: hkPanelOverview,
+  specification: hkPanelSpecification,
+  internal: hkPanelInternal,
+  parts: hkPanelParts,
+  gallery: hkPanelGallery,
+  documents: hkPanelDocuments,
+  ai: hkPanelAI,
+};
+
+const HK_PANEL_WIRERS = {
+  overview: hkWireOverviewPanel,
+  specification: hkWireSpecificationPanel,
+  internal: (machine) => { hkWireImagePanel(machine, 'internal'); hkRenderApprovalSection(machine); },
+  parts: hkWirePartsPanel,
+  gallery: (machine) => hkWireImagePanel(machine, 'gallery'),
+  documents: hkWireDocumentsPanel,
+  ai: hkWireAIPanel,
+};
+
+// Re-renders just one tab panel's content and rewires it — used after any
+// edit/add/remove so the rest of the page (tabs, header, other panels)
+// doesn't get rebuilt and the person doesn't lose their place.
+function hkRerenderPanel(machine, key){
+  const panel = document.querySelector(`.hk-tabpanel[data-panel="${key}"]`);
+  if(!panel) return;
+  panel.innerHTML = HK_PANEL_RENDERERS[key](machine);
+  const wire = HK_PANEL_WIRERS[key];
+  if(wire) wire(machine);
+}
+
+function hkWireAIPanel(machine){
+  const log = document.getElementById('hk-ai-log');
+  const input = document.getElementById('hk-ai-input');
+  const send = document.getElementById('hk-ai-send');
+  if(!log || !input || !send) return;
+
+  function ask(text){
+    if(!text.trim()) return;
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--user">${hkEscapeHtml(text)}</div>`);
+    const answer = hkAskBot(text, machine);
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot">${hkEscapeHtml(answer)}</div>`);
+    log.scrollTop = log.scrollHeight;
+    input.value = '';
+  }
+  send.addEventListener('click', () => ask(input.value));
+  input.addEventListener('keydown', (e) => { if(e.key === 'Enter') ask(input.value); });
+  document.querySelectorAll('.hk-ai-suggestion').forEach(btn => {
+    btn.addEventListener('click', () => ask(btn.dataset.q));
+  });
+}
+
+function hkOpenPartModal(machine, partId){
+  const part = getPartByIdWithUsage(partId, machine.id);
+  if(!part) return;
+  let backdrop = document.querySelector('.hk-modal-backdrop');
+  if(!backdrop){
+    backdrop = document.createElement('div');
+    backdrop.className = 'hk-modal-backdrop';
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', (e) => { if(e.target === backdrop) backdrop.classList.remove('is-visible'); });
+  }
+  const usedIn = (part.usedIn || []).map(u => `<a href="machine-detail.html?id=${u.id}" class="hk-badge" style="margin:3px 6px 0 0;">${hkEscapeHtml(u.name)}</a>`).join('');
+  backdrop.innerHTML = `
+    <div class="hk-modal">
+      <button class="hk-modal__close" data-close-modal>✕</button>
+      <div class="hk-modal__media">${part.image ? `<img src="${hkDriveImgUrl(part.image)}" alt="">` : hkIcon('image')}</div>
+      <h3 style="margin-bottom:4px;">${hkEscapeHtml(part.name)}</h3>
+      <p style="margin-bottom:14px;">${hkEscapeHtml(part.brand || '-')} · ${hkEscapeHtml(part.model || '-')}</p>
+      <div class="hk-kv-grid" style="margin-top:0;">
+        <div class="hk-kv-grid__item" style="grid-column:1/-1;">
+          <div class="hk-kv-grid__label">รายละเอียด</div>
+          <div class="hk-kv-grid__value" style="font-weight:400;">${hkEscapeHtml(part.note || '-')}</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="hk-dheader__meta-label" style="margin-bottom:8px;">ใช้กับเครื่อง</div>
+        ${usedIn || '<p style="margin:0;">-</p>'}
+      </div>
+    </div>`;
+  backdrop.querySelector('[data-close-modal]').addEventListener('click', () => backdrop.classList.remove('is-visible'));
+  backdrop.classList.add('is-visible');
+}
+
+function hkRenderDetail(machine){
+  const root = document.getElementById('hk-detail-root');
+  const tabsHtml = HK_TABS.map((t) => `<div class="hk-tab${t.key === HK_ACTIVE_TAB ? ' is-active' : ''}" data-tab="${t.key}">${t.label}</div>`).join('');
+  const panelsHtml = HK_TABS.map((t) => `<div class="hk-tabpanel${t.key === HK_ACTIVE_TAB ? ' is-active' : ''}" data-panel="${t.key}">${HK_PANEL_RENDERERS[t.key](machine)}</div>`).join('');
+
+  root.innerHTML = `
+    ${hkRenderHeader(machine)}
+    <div class="hk-tabs">${tabsHtml}</div>
+    <div>${panelsHtml}</div>`;
+
+  root.querySelectorAll('.hk-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      HK_ACTIVE_TAB = tab.dataset.tab;
+      root.querySelectorAll('.hk-tab').forEach(t => t.classList.remove('is-active'));
+      root.querySelectorAll('.hk-tabpanel').forEach(p => p.classList.remove('is-active'));
+      tab.classList.add('is-active');
+      root.querySelector(`.hk-tabpanel[data-panel="${tab.dataset.tab}"]`).classList.add('is-active');
+    });
+  });
+
+  hkWireOverviewPanel(machine);
+  hkWireSpecificationPanel(machine);
+  hkWireImagePanel(machine, 'internal');
+  hkWireImagePanel(machine, 'gallery');
+  hkWirePartsPanel(machine);
+  hkWireDocumentsPanel(machine);
+  hkWireAIPanel(machine);
+  hkRenderApprovalSection(machine);
+}
+
+function hkRenderNotFound(){
+  document.getElementById('hk-detail-root').innerHTML = `
+    <div class="hk-empty">
+      <div class="hk-empty__icon">🤔</div>
+      <h3>ไม่พบเครื่องจักรนี้</h3>
+      <p>รหัสเครื่องจักรอาจไม่ถูกต้อง หรือถูกลบไปแล้ว</p>
+      <a href="index.html" class="hk-btn hk-btn--primary" style="margin-top:12px;">กลับไป Dashboard</a>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('hk-detail-root').innerHTML = `
+    <div class="hk-empty"><div class="hk-empty__icon">⏳</div><h3>กำลังโหลดข้อมูล...</h3></div>`;
+
+  await hkBootstrapMachines();
+  if(HK_LAST_LOAD_ERROR) hkToast('โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ กำลังแสดงข้อมูลตัวอย่างแทน');
+
+  const id = hkQueryParam('id');
+  const machine = id ? getMachineById(id) : null;
+
+  if(!machine){
+    hkRenderSidebarCategoriesDetail(null);
+    hkWireSidebarToggle();
+    hkRenderNotFound();
+    document.getElementById('hk-breadcrumb').innerHTML = `<a href="index.html">Dashboard</a>`;
+    return;
+  }
+
+  hkRenderSidebarCategoriesDetail(machine.category);
+  hkWireSidebarToggle();
+  hkRenderBreadcrumb(machine);
+  hkRenderDetail(machine);
+});
