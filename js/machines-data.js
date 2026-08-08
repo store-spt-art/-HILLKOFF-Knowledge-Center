@@ -125,7 +125,7 @@ function hkEmptyDocuments(){
 const HK_MACHINES_SEED = [
   {
     id: 'CM-001', category: 'coffee',
-    name: 'Rocket R9', brand: 'Rocket Espresso', model: 'R9 ONE', type: 'เครื่องชงกาแฟ 2 กรุ๊ป',
+    name: 'Rocket R9', brand: 'Rocket Espresso', model: 'R9 ONE', type: 'เครื่องชงกาแฟ 2 กรุ๊ป', bcCode: '',
     description: 'เครื่องชงกาแฟ 2 กรุ๊ป ระบบ Dual Boiler พร้อม PID ควบคุมอุณหภูมิ เหมาะสำหรับร้านที่ต้องการความคงที่ของอุณหภูมิสูง',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '2600W', frequency: '50Hz', coffeeBoiler: '2L', steamBoiler: '2.7L', pump: 'Rotary Pump', group: '2 Group', pid: 'Dual PID', display: 'TFT Display', dimension: '75 x 55 x 50 cm', weight: '48 kg', waterTank: '3L (Direct plumb-in ได้)' },
@@ -142,7 +142,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'CM-002', category: 'coffee',
-    name: 'Rocket Boxer', brand: 'Rocket Espresso', model: 'Boxer', type: 'เครื่องชงกาแฟ 1 กรุ๊ป',
+    name: 'Rocket Boxer', brand: 'Rocket Espresso', model: 'Boxer', type: 'เครื่องชงกาแฟ 1 กรุ๊ป', bcCode: '',
     description: 'เครื่องชงกาแฟ 1 กรุ๊ป ขนาดกะทัดรัด เหมาะกับร้านพื้นที่จำกัดหรือใช้เป็นเครื่องสำรอง',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '1500W', frequency: '50Hz', coffeeBoiler: '1L', steamBoiler: '1.8L', pump: 'Rotary Pump', group: '1 Group', pid: 'Single PID', display: 'Analog Gauge', dimension: '48 x 50 x 42 cm', weight: '32 kg', waterTank: '2.2L' },
@@ -157,7 +157,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'CM-003', category: 'coffee',
-    name: 'La Marzocco GB5', brand: 'La Marzocco', model: 'GB5', type: 'เครื่องชงกาแฟ 3 กรุ๊ป',
+    name: 'La Marzocco GB5', brand: 'La Marzocco', model: 'GB5', type: 'เครื่องชงกาแฟ 3 กรุ๊ป', bcCode: '',
     description: 'เครื่องชงกาแฟระดับพรีเมียม 3 กรุ๊ป ระบบ Saturated Group พร้อม Boiler ขนาดใหญ่รองรับร้านที่มีปริมาณขายสูง',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '380V (3 Phase)', power: '6000W', frequency: '50Hz', coffeeBoiler: '3 x 1.4L', steamBoiler: '11L', pump: 'Rotary Pump', group: '3 Group Saturated', pid: 'Digital PID ทุกหัว', display: 'LCD Display', dimension: '96 x 58 x 54 cm', weight: '115 kg', waterTank: 'Direct plumb-in' },
@@ -172,7 +172,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'CM-004', category: 'coffee',
-    name: 'Nuova Aurelia', brand: 'Nuova Simonelli', model: 'Aurelia', type: 'เครื่องชงกาแฟ 2 กรุ๊ป',
+    name: 'Nuova Aurelia', brand: 'Nuova Simonelli', model: 'Aurelia', type: 'เครื่องชงกาแฟ 2 กรุ๊ป', bcCode: '',
     description: 'เครื่องชงกาแฟ 2 กรุ๊ป ระบบ Volumetric ตวงปริมาณน้ำอัตโนมัติ',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '3200W', frequency: '50Hz', coffeeBoiler: '2 x 1L', steamBoiler: '5L', pump: 'Rotary Pump', group: '2 Group Volumetric', pid: 'PID Boiler เดียว', display: 'LED Display', dimension: '80 x 56 x 52 cm', weight: '62 kg', waterTank: '4L / Direct plumb-in' },
@@ -187,7 +187,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'CM-005', category: 'coffee',
-    name: 'Casadio Undici', brand: 'Casadio', model: 'Undici A/E', type: 'เครื่องชงกาแฟ 2 กรุ๊ป',
+    name: 'Casadio Undici', brand: 'Casadio', model: 'Undici A/E', type: 'เครื่องชงกาแฟ 2 กรุ๊ป', bcCode: '',
     description: 'เครื่องชงกาแฟ 2 กรุ๊ป ตัวถังสแตนเลส เหมาะกับการใช้งานหนักต่อเนื่อง',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '3000W', frequency: '50Hz', coffeeBoiler: '2 x 0.9L', steamBoiler: '5L', pump: 'Rotary Pump', group: '2 Group', pid: '-', display: 'Analog Gauge', dimension: '78 x 55 x 50 cm', weight: '58 kg', waterTank: '3L / Direct plumb-in' },
@@ -200,7 +200,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'GR-001', category: 'grinder',
-    name: 'Mazzer Robur', brand: 'Mazzer', model: 'Robur Electronic', type: 'เครื่องบดกาแฟ',
+    name: 'Mazzer Robur', brand: 'Mazzer', model: 'Robur Electronic', type: 'เครื่องบดกาแฟ', bcCode: '',
     description: 'เครื่องบดกาแฟใบมีดแบน 71mm สำหรับร้านที่มีปริมาณบดสูง',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '650W', frequency: '50Hz', dimension: '22 x 42 x 60 cm', weight: '18 kg' },
@@ -213,7 +213,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'TM-001', category: 'tea',
-    name: 'Fuji Tea Machine', brand: 'Fuji', model: 'FJ-1200', type: 'เครื่องชงชา',
+    name: 'Fuji Tea Machine', brand: 'Fuji', model: 'FJ-1200', type: 'เครื่องชงชา', bcCode: '',
     description: 'เครื่องชงชาระบบผสมอัตโนมัติ ปรับความหวาน-ความเข้มได้',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '1200W', frequency: '50Hz', dimension: '40 x 50 x 70 cm', weight: '35 kg' },
@@ -226,7 +226,7 @@ const HK_MACHINES_SEED = [
   },
   {
     id: 'IM-001', category: 'ice',
-    name: 'Hoshizaki IM-100', brand: 'Hoshizaki', model: 'IM-100', type: 'เครื่องทำน้ำแข็ง',
+    name: 'Hoshizaki IM-100', brand: 'Hoshizaki', model: 'IM-100', type: 'เครื่องทำน้ำแข็ง', bcCode: '',
     description: 'เครื่องทำน้ำแข็งก้อนเล็กระบบ Air-cooled กำลังผลิต 100 กก./วัน',
     coverImage: null,
     specification: { ...hkEmptySpec(), voltage: '220V', power: '900W', frequency: '50Hz', dimension: '54 x 60 x 80 cm', weight: '52 kg' },
@@ -279,7 +279,7 @@ function searchMachines(query, category){
   const q = (query || '').trim().toLowerCase();
   if(!q) return base;
   return base.filter(m =>
-    [m.name, m.brand, m.model, m.type, m.id].filter(Boolean).some(v => v.toLowerCase().includes(q))
+    [m.name, m.brand, m.model, m.type, m.id, m.bcCode].filter(Boolean).some(v => v.toLowerCase().includes(q))
   );
 }
 function nextIdForCategory(category){
@@ -392,11 +392,12 @@ async function updateMachineInfo(machineId, fields){
   machine.brand = fields.brand;
   machine.model = fields.model;
   machine.type = fields.type;
+  machine.bcCode = fields.bcCode;
   machine.description = fields.description;
   if(fields.coverImage !== undefined) machine.coverImage = fields.coverImage || null;
   await hkTryPersist(hkApiUpdateMachineInfo(machineId, {
     category: machine.category, name: machine.name, brand: machine.brand, model: machine.model,
-    type: machine.type, description: machine.description, coverImageUrl: machine.coverImage,
+    type: machine.type, bcCode: machine.bcCode, description: machine.description, coverImageUrl: machine.coverImage,
   }));
   return machine;
 }

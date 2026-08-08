@@ -63,6 +63,10 @@ function hkRenderHeader(machine){
             <div class="hk-dheader__meta-label">ประเภท</div>
             <div class="hk-dheader__meta-value">${hkEscapeHtml(machine.type || '-')}</div>
           </div>
+          <div class="hk-dheader__meta-item">
+            <div class="hk-dheader__meta-label">รหัส BC</div>
+            <div class="hk-dheader__meta-value">${hkEscapeHtml(machine.bcCode || '-')}</div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -90,6 +94,7 @@ function hkPanelOverview(m){
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ยี่ห้อ</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.brand || '-')}</div></div>
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">รุ่น</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.model || '-')}</div></div>
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ประเภท</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.type || '-')}</div></div>
+      <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">รหัส BC</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.bcCode || '-')}</div></div>
     </div>`;
 }
 
@@ -124,6 +129,10 @@ function hkOverviewEditFormHtml(m){
       <div class="hk-field">
         <label class="hk-field__label">ประเภท</label>
         <input class="hk-input" id="hk-edit-type" type="text" value="${hkEscapeHtml(m.type || '')}">
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">รหัส BC</label>
+        <input class="hk-input" id="hk-edit-bccode" type="text" value="${hkEscapeHtml(m.bcCode || '')}" placeholder="เช่น BC-10234">
       </div>
       <div class="hk-field">
         <label class="hk-field__label">คำอธิบาย</label>
@@ -176,6 +185,7 @@ function hkWireOverviewPanel(machine){
     const brand = panel.querySelector('#hk-edit-brand').value.trim();
     const model = panel.querySelector('#hk-edit-model').value.trim();
     const type = panel.querySelector('#hk-edit-type').value.trim();
+    const bcCode = panel.querySelector('#hk-edit-bccode').value.trim();
     const description = panel.querySelector('#hk-edit-description').value.trim();
     const fileInput = panel.querySelector('#hk-edit-cover-input');
     const file = fileInput.files && fileInput.files[0];
@@ -188,7 +198,7 @@ function hkWireOverviewPanel(machine){
       }else if(pendingRemoveCover){
         coverImage = '';
       }
-      await updateMachineInfo(machine.id, { category, name, brand, model, type, description, coverImage });
+      await updateMachineInfo(machine.id, { category, name, brand, model, type, bcCode, description, coverImage });
       if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
       HK_EDIT_STATE.overview = false;
       hkRenderBreadcrumb(machine);

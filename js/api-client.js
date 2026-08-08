@@ -15,7 +15,7 @@
    triggering one — Code.gs still JSON.parses the body normally.
    ========================================================= */
 
-const HK_API_URL = 'https://script.google.com/macros/s/AKfycbwLskzgWtGIRQ7wl04cWaGABpE3eN2_-6rpqM8D_sgAilMQdlosO0dYimYh1bmnlo0O/exec';
+const HK_API_URL = 'https://script.google.com/macros/s/AKfycbwRYXeA_C2SuYPECPHoCcntRJY8QE7ad1SqK2qjhd8K-AMP2pPLjeRtnoiZVh0h9ECB/exec';
 
 async function hkApiListMachines(){
   const res = await fetch(`${HK_API_URL}?action=list`);
