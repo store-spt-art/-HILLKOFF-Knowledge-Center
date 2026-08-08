@@ -492,7 +492,7 @@ function hkPanelParts(m){
     : `<div class="hk-empty"><div class="hk-empty__icon">🔧</div><h3>ยังไม่มีรายการอะไหล่</h3></div>`;
   return `
     <div class="hk-panel-actionbar">
-      <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-part-add-toggle">+ เพิ่มอะไหล่</button>
+      <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-part-add-toggle>+ เพิ่มอะไหล่</button>
     </div>
     ${hkPartFormHtml(m)}
     ${table}`;
