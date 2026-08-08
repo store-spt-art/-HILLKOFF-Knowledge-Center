@@ -253,7 +253,7 @@ function hkImageGroupsHtml(groups, data, section){
     const items = (data?.[g.key] || []);
     const tiles = items.map(url => `
       <div class="hk-imgtile">
-        <img src="${hkDriveImgUrl(url)}" alt="">
+        <img src="${hkDriveImgUrl(url)}" alt="" data-img-view data-url="${hkEscapeHtml(url)}">
         <button type="button" class="hk-thumb__remove" data-img-remove data-section="${section}" data-group="${g.key}" data-url="${hkEscapeHtml(url)}" aria-label="ลบรูป">✕</button>
       </div>`).join('');
     const addTile = `
@@ -267,6 +267,25 @@ function hkImageGroupsHtml(groups, data, section){
         <div class="hk-imggroup__grid">${tiles}${addTile}</div>
       </div>`;
   }).join('');
+}
+
+// Shared lightbox — reuses the same backdrop element hkOpenPartModal
+// uses, so only one popup can ever be open at a time.
+function hkOpenImageLightbox(url){
+  let backdrop = document.querySelector('.hk-modal-backdrop');
+  if(!backdrop){
+    backdrop = document.createElement('div');
+    backdrop.className = 'hk-modal-backdrop';
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', (e) => { if(e.target === backdrop) backdrop.classList.remove('is-visible'); });
+  }
+  backdrop.innerHTML = `
+    <div class="hk-modal hk-modal--lightbox">
+      <button class="hk-modal__close" data-close-modal>✕</button>
+      <img class="hk-lightbox-img" src="${hkDriveImgUrl(url)}" alt="">
+    </div>`;
+  backdrop.querySelector('[data-close-modal]').addEventListener('click', () => backdrop.classList.remove('is-visible'));
+  backdrop.classList.add('is-visible');
 }
 
 function hkWireImagePanel(machine, panelKey){
@@ -289,12 +308,17 @@ function hkWireImagePanel(machine, panelKey){
   });
 
   panel.querySelectorAll('[data-img-remove]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       try{ await removeImageFromMachine(machine.id, btn.dataset.section, btn.dataset.group, btn.dataset.url); }
       catch(err){ hkToast(err.message || 'ลบไม่สำเร็จ'); }
       if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
       hkRerenderPanel(machine, panelKey);
     });
+  });
+
+  panel.querySelectorAll('[data-img-view]').forEach(img => {
+    img.addEventListener('click', () => hkOpenImageLightbox(img.dataset.url));
   });
 }
 
