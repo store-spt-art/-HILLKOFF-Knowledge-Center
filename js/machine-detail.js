@@ -4,8 +4,11 @@
 
 // Which tab stays selected across re-renders triggered by edits.
 let HK_ACTIVE_TAB = 'overview';
-// Toggle-based edit mode for the two "whole panel" forms.
-let HK_EDIT_STATE = { overview: false, specification: false };
+// Toggle-based edit mode for the two "whole panel" forms, plus the two
+// image-manage modes (Internal Structure / Gallery) — remove (✕) buttons
+// and the "+" upload tile only show once someone deliberately turns
+// manage mode on, so browsing photos never risks an accidental delete.
+let HK_EDIT_STATE = { overview: false, specification: false, internalImages: false, galleryImages: false };
 // Add/edit state for the Parts List inline form.
 let HK_PART_FORM_STATE = { mode: null, partId: null };
 
@@ -248,23 +251,25 @@ function hkWireSpecificationPanel(machine){
   });
 }
 
-function hkImageGroupsHtml(groups, data, section){
+function hkImageGroupsHtml(groups, data, section, managing){
   return groups.map(g => {
     const items = (data?.[g.key] || []);
     const tiles = items.map(url => `
       <div class="hk-imgtile">
         <img src="${hkDriveImgUrl(url)}" alt="" data-img-view data-url="${hkEscapeHtml(url)}">
-        <button type="button" class="hk-thumb__remove" data-img-remove data-section="${section}" data-group="${g.key}" data-url="${hkEscapeHtml(url)}" aria-label="ลบรูป">✕</button>
+        ${managing ? `<button type="button" class="hk-thumb__remove" data-img-remove data-section="${section}" data-group="${g.key}" data-url="${hkEscapeHtml(url)}" aria-label="ลบรูป">✕</button>` : ''}
       </div>`).join('');
-    const addTile = `
+    const addTile = managing ? `
       <label class="hk-imgtile hk-imgtile--add">
         ${hkIcon('add')}
         <input type="file" accept="image/*" multiple data-img-add data-section="${section}" data-group="${g.key}">
-      </label>`;
+      </label>` : '';
+    const emptyNote = (!managing && items.length === 0)
+      ? `<div class="hk-imgtile hk-imgtile--empty">${hkIcon('image')}<span>ไม่มีรูป</span></div>` : '';
     return `
       <div class="hk-imggroup">
         <div class="hk-imggroup__label">${g.label}</div>
-        <div class="hk-imggroup__grid">${tiles}${addTile}</div>
+        <div class="hk-imggroup__grid">${tiles}${addTile}${emptyNote}</div>
       </div>`;
   }).join('');
 }
@@ -291,6 +296,13 @@ function hkOpenImageLightbox(url){
 function hkWireImagePanel(machine, panelKey){
   const panel = document.querySelector(`.hk-tabpanel[data-panel="${panelKey}"]`);
   if(!panel) return;
+  const stateKey = panelKey === 'internal' ? 'internalImages' : 'galleryImages';
+
+  const manageToggle = panel.querySelector('[data-img-manage-toggle]');
+  if(manageToggle) manageToggle.addEventListener('click', () => {
+    HK_EDIT_STATE[stateKey] = !HK_EDIT_STATE[stateKey];
+    hkRerenderPanel(machine, panelKey);
+  });
 
   panel.querySelectorAll('[data-img-add]').forEach(input => {
     input.addEventListener('change', async () => {
@@ -310,6 +322,7 @@ function hkWireImagePanel(machine, panelKey){
   panel.querySelectorAll('[data-img-remove]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      if(!confirm('ลบรูปนี้? การลบไม่สามารถย้อนกลับได้')) return;
       try{ await removeImageFromMachine(machine.id, btn.dataset.section, btn.dataset.group, btn.dataset.url); }
       catch(err){ hkToast(err.message || 'ลบไม่สำเร็จ'); }
       if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
@@ -323,9 +336,15 @@ function hkWireImagePanel(machine, panelKey){
 }
 
 function hkPanelInternal(m){
+  const managing = HK_EDIT_STATE.internalImages;
   return `
     <div class="hk-internal-note">🔒 Internal Use Only — สำหรับทีมช่างภายในเท่านั้น (เป็นเพียงรูปประกอบ ไม่มีระบบซ่อม)</div>
-    ${hkImageGroupsHtml(HK_INTERNAL_GROUPS, m.internalImages, 'Internal')}
+    <div class="hk-panel-actionbar">
+      <button type="button" class="hk-btn ${managing ? 'hk-btn--primary' : 'hk-btn--ghost'} hk-btn--sm" data-img-manage-toggle>
+        ${managing ? '✓ เสร็จสิ้น' : '✎ จัดการรูปภาพ'}
+      </button>
+    </div>
+    ${hkImageGroupsHtml(HK_INTERNAL_GROUPS, m.internalImages, 'Internal', managing)}
     <div id="hk-approval-root"></div>`;
 }
 
@@ -495,7 +514,14 @@ function hkUpdateHeaderApprovalBadge(machine){
 }
 
 function hkPanelGallery(m){
-  return hkImageGroupsHtml(HK_GALLERY_GROUPS, m.gallery, 'Gallery');
+  const managing = HK_EDIT_STATE.galleryImages;
+  return `
+    <div class="hk-panel-actionbar">
+      <button type="button" class="hk-btn ${managing ? 'hk-btn--primary' : 'hk-btn--ghost'} hk-btn--sm" data-img-manage-toggle>
+        ${managing ? '✓ เสร็จสิ้น' : '✎ จัดการรูปภาพ'}
+      </button>
+    </div>
+    ${hkImageGroupsHtml(HK_GALLERY_GROUPS, m.gallery, 'Gallery', managing)}`;
 }
 
 function hkPanelParts(m){
