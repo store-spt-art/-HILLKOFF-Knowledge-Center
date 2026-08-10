@@ -116,6 +116,52 @@
   padding: 8px 12px; margin-bottom: 18px; width: fit-content;
 }
 
+/* ---------- Internal technical assessment (rich text, Quill-based) ---------- */
+.hk-internal-notes{ margin-bottom: 28px; }
+.hk-internal-notes__head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 12px; }
+.hk-internal-notes__title{ font-family: var(--hk-font-display); font-size: 15px; font-weight:700; }
+.hk-internal-notes__body{
+  background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-lg);
+  padding: 18px 20px !important; min-height: 60px; color: var(--hk-text);
+}
+.hk-internal-notes__body p{ color: var(--hk-text); }
+.hk-internal-notes__empty{ color: var(--hk-text-dim); font-style: italic; margin:0; }
+
+/* Quill editor — dark theme override to match the rest of the app */
+#hk-internal-notes-editor-wrap .ql-toolbar.ql-snow{
+  background: var(--hk-surface-2); border-color: var(--hk-border);
+  border-radius: var(--hk-radius-md) var(--hk-radius-md) 0 0;
+}
+#hk-internal-notes-editor-wrap .ql-container.ql-snow{
+  background: var(--hk-surface); border-color: var(--hk-border); font-family: var(--hk-font-body); font-size: 14px;
+  border-radius: 0 0 var(--hk-radius-md) var(--hk-radius-md);
+}
+#hk-internal-notes-editor-wrap .ql-editor{ min-height: 220px; color: var(--hk-text); }
+#hk-internal-notes-editor-wrap .ql-editor.ql-blank::before{ color: var(--hk-text-dim); font-style: normal; }
+#hk-internal-notes-editor-wrap .ql-stroke{ stroke: var(--hk-text-dim); }
+#hk-internal-notes-editor-wrap .ql-fill{ fill: var(--hk-text-dim); }
+#hk-internal-notes-editor-wrap .ql-picker{ color: var(--hk-text-dim); }
+#hk-internal-notes-editor-wrap button:hover .ql-stroke,
+#hk-internal-notes-editor-wrap .ql-picker-label:hover .ql-stroke{ stroke: var(--hk-gold); }
+#hk-internal-notes-editor-wrap button:hover .ql-fill,
+#hk-internal-notes-editor-wrap .ql-picker-label:hover .ql-fill{ fill: var(--hk-gold); }
+#hk-internal-notes-editor-wrap button.ql-active .ql-stroke,
+#hk-internal-notes-editor-wrap .ql-picker-label.ql-active .ql-stroke{ stroke: var(--hk-gold); }
+#hk-internal-notes-editor-wrap button.ql-active .ql-fill{ fill: var(--hk-gold); }
+#hk-internal-notes-editor-wrap .ql-picker-label{ color: var(--hk-text-dim); }
+#hk-internal-notes-editor-wrap .ql-snow .ql-picker-options{
+  background: var(--hk-surface-2); border-color: var(--hk-border) !important; box-shadow: var(--hk-shadow-2);
+}
+#hk-internal-notes-editor-wrap .ql-snow .ql-picker.ql-expanded .ql-picker-label{ border-color: var(--hk-border); }
+#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip{
+  background: var(--hk-surface-2); border-color: var(--hk-border); color: var(--hk-text); box-shadow: var(--hk-shadow-2);
+}
+#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip input[type=text]{
+  background: var(--hk-surface); border-color: var(--hk-border); color: var(--hk-text);
+}
+#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip a.ql-action::after,
+#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip a.ql-remove::before{ color: var(--hk-gold); }
+
 /* ---------- Machine evaluation / approval-to-sell ---------- */
 .hk-approval{ margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--hk-border); }
 .hk-approval__head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom: 18px; }

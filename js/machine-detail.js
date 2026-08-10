@@ -8,7 +8,9 @@ let HK_ACTIVE_TAB = 'overview';
 // image-manage modes (Internal Structure / Gallery) — remove (✕) buttons
 // and the "+" upload tile only show once someone deliberately turns
 // manage mode on, so browsing photos never risks an accidental delete.
-let HK_EDIT_STATE = { overview: false, specification: false, internalImages: false, galleryImages: false };
+let HK_EDIT_STATE = { overview: false, specification: false, internalImages: false, galleryImages: false, internalNotes: false };
+// Live Quill editor instance while the internal-notes rich-text form is open.
+let HK_QUILL_INSTANCE = null;
 // Add/edit state for the Parts List inline form.
 let HK_PART_FORM_STATE = { mode: null, partId: null };
 
@@ -349,6 +351,7 @@ function hkPanelInternal(m){
   const managing = HK_EDIT_STATE.internalImages;
   return `
     <div class="hk-internal-note">🔒 Internal Use Only — สำหรับทีมช่างภายในเท่านั้น (เป็นเพียงรูปประกอบ ไม่มีระบบซ่อม)</div>
+    <div id="hk-internal-notes-root">${hkInternalNotesSectionHtml(m)}</div>
     <div class="hk-panel-actionbar">
       <button type="button" class="hk-btn ${managing ? 'hk-btn--primary' : 'hk-btn--ghost'} hk-btn--sm" data-img-manage-toggle>
         ${managing ? '✓ เสร็จสิ้น' : '✎ จัดการรูปภาพ'}
@@ -356,6 +359,97 @@ function hkPanelInternal(m){
     </div>
     ${hkImageGroupsHtml(HK_INTERNAL_GROUPS, m.internalImages, 'Internal', managing)}
     <div id="hk-approval-root"></div>`;
+}
+
+// "การประเมินเชิงลึกจากช่าง" — a free-form, richly-formatted technical
+// assessment (headings, bold, lists, alignment — like typing in Word),
+// separate from the plain-text description on the Overview tab. Stored
+// as HTML from the Quill editor.
+function hkInternalNotesSectionHtml(m){
+  if(HK_EDIT_STATE.internalNotes){
+    return `
+      <div class="hk-internal-notes">
+        <div class="hk-internal-notes__head">
+          <div class="hk-internal-notes__title">การประเมินเชิงลึกจากช่าง</div>
+        </div>
+        <div id="hk-internal-notes-editor-wrap">
+          <div id="hk-internal-notes-editor"></div>
+        </div>
+        <div class="hk-wizard-nav">
+          <button type="button" class="hk-btn hk-btn--ghost" data-notes-cancel>ยกเลิก</button>
+          <button type="button" class="hk-btn hk-btn--primary" data-notes-save>บันทึก</button>
+        </div>
+      </div>`;
+  }
+  const plain = (m.internalNotes || '').replace(/<[^>]*>/g, '').trim();
+  return `
+    <div class="hk-internal-notes">
+      <div class="hk-internal-notes__head">
+        <div class="hk-internal-notes__title">การประเมินเชิงลึกจากช่าง</div>
+        <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-notes-edit>✎ แก้ไข</button>
+      </div>
+      <div class="hk-internal-notes__body ql-editor">
+        ${plain ? m.internalNotes : '<p class="hk-internal-notes__empty">ยังไม่มีข้อมูลการประเมิน</p>'}
+      </div>
+    </div>`;
+}
+
+function hkWireInternalNotesPanel(machine){
+  const root = document.getElementById('hk-internal-notes-root');
+  if(!root) return;
+
+  const editBtn = root.querySelector('[data-notes-edit]');
+  if(editBtn) editBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.internalNotes = true;
+    hkRerenderInternalNotes(machine);
+  });
+
+  const cancelBtn = root.querySelector('[data-notes-cancel]');
+  if(cancelBtn) cancelBtn.addEventListener('click', () => {
+    HK_EDIT_STATE.internalNotes = false;
+    HK_QUILL_INSTANCE = null;
+    hkRerenderInternalNotes(machine);
+  });
+
+  const saveBtn = root.querySelector('[data-notes-save]');
+  if(saveBtn) saveBtn.addEventListener('click', async () => {
+    const html = HK_QUILL_INSTANCE ? HK_QUILL_INSTANCE.root.innerHTML : (machine.internalNotes || '');
+    try{
+      await updateInternalNotes(machine.id, html);
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      HK_EDIT_STATE.internalNotes = false;
+      HK_QUILL_INSTANCE = null;
+      hkRerenderInternalNotes(machine);
+    }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
+  });
+
+  const editorEl = root.querySelector('#hk-internal-notes-editor');
+  if(editorEl && window.Quill){
+    HK_QUILL_INSTANCE = new Quill(editorEl, {
+      theme: 'snow',
+      placeholder: 'พิมพ์รายละเอียดการประเมินเชิงลึก...',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ align: [] }],
+          ['blockquote', 'code-block'],
+          ['link'],
+          ['clean'],
+        ],
+      },
+    });
+    HK_QUILL_INSTANCE.root.innerHTML = machine.internalNotes || '';
+  }
+}
+
+function hkRerenderInternalNotes(machine){
+  const root = document.getElementById('hk-internal-notes-root');
+  if(!root) return;
+  root.innerHTML = hkInternalNotesSectionHtml(machine);
+  hkWireInternalNotesPanel(machine);
 }
 
 /* ---------- Machine evaluation / approval-to-sell ---------- */
@@ -739,7 +833,7 @@ const HK_PANEL_RENDERERS = {
 const HK_PANEL_WIRERS = {
   overview: hkWireOverviewPanel,
   specification: hkWireSpecificationPanel,
-  internal: (machine) => { hkWireImagePanel(machine, 'internal'); hkRenderApprovalSection(machine); },
+  internal: (machine) => { hkWireInternalNotesPanel(machine); hkWireImagePanel(machine, 'internal'); hkRenderApprovalSection(machine); },
   parts: hkWirePartsPanel,
   gallery: (machine) => hkWireImagePanel(machine, 'gallery'),
   documents: hkWireDocumentsPanel,
@@ -832,6 +926,7 @@ function hkRenderDetail(machine){
 
   hkWireOverviewPanel(machine);
   hkWireSpecificationPanel(machine);
+  hkWireInternalNotesPanel(machine);
   hkWireImagePanel(machine, 'internal');
   hkWireImagePanel(machine, 'gallery');
   hkWirePartsPanel(machine);
