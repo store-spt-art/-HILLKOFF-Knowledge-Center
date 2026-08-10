@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เข้าสู่ระบบ · HILLKOFF Coffee Machine Knowledge Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/wizard.css">
+<link rel="stylesheet" href="../css/login.css">
+</head>
+<body class="hk-login-body">
+
+<div class="hk-login-wrap">
+  <div class="hk-login-card">
+    <div class="hk-brand" style="justify-content:center; padding:0 0 22px;">
+      <div class="hk-brand__mark">HK</div>
+      <div>
+        <div class="hk-brand__name">HILLKOFF</div>
+        <div class="hk-brand__sub">Knowledge Center</div>
+      </div>
+    </div>
+    <h1 class="hk-login-title">เข้าสู่ระบบ</h1>
+    <p class="hk-login-sub">ใช้อีเมลบริษัท (@hillkoff.com หรือ @hillkoff.co.th)</p>
+
+    <div id="hk-login-error" class="hk-login-error" style="display:none;"></div>
+
+    <form id="hk-login-form" novalidate>
+      <div class="hk-field">
+        <label class="hk-field__label">อีเมล</label>
+        <input class="hk-input" type="email" id="hk-login-email" placeholder="name@hillkoff.com" autocomplete="username" required>
+      </div>
+      <div class="hk-field">
+        <label class="hk-field__label">รหัสผ่าน</label>
+        <input class="hk-input" type="password" id="hk-login-password" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="hk-btn hk-btn--primary hk-btn--block" id="hk-login-submit">เข้าสู่ระบบ</button>
+    </form>
+
+    <p class="hk-login-hint">ยังไม่มีบัญชี? ติดต่อแอดมินเพื่อขอสิทธิ์เข้าใช้งาน</p>
+  </div>
+</div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/api-client.js"></script>
+<script src="../js/login.js"></script>
+</body>
+</html>

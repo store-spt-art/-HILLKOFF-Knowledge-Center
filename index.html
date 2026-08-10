@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+<script>
+(function(){
+  var t = localStorage.getItem('hk_auth_token');
+  function expired(tok){
+    if(!tok) return true;
+    var parts = tok.split('.');
+    if(parts.length !== 2) return true;
+    try{
+      var json = atob(parts[0].replace(/-/g,'+').replace(/_/g,'/'));
+      var payload = JSON.parse(json);
+      return !payload.exp || payload.exp < Date.now();
+    }catch(e){ return true; }
+  }
+  if(!t || expired(t)){
+    localStorage.removeItem('hk_auth_token');
+    localStorage.removeItem('hk_auth_email');
+    var here = location.pathname.split('/').pop() + location.search;
+    location.replace('login.html?redirect=' + encodeURIComponent(here));
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard · HILLKOFF Coffee Machine Knowledge Center</title>
@@ -91,6 +112,7 @@
   </div>
 </div>
 
+<script src="../js/auth.js"></script>
 <script src="../js/utils.js"></script>
 <script src="../js/api-client.js"></script>
 <script src="../js/machines-data.js"></script>

@@ -16,7 +16,7 @@ const HK_WIZARD_STEPS = [
 let hkWizard = {
   step: 1,
   category: '',
-  name: '', brand: '', model: '', type: '', description: '',
+  name: '', brand: '', model: '', type: '', bcCode: '', description: '',
   specification: null,
   coverImage: null,
   gallery: null,
@@ -33,7 +33,7 @@ function hkResetWizard(){
     // this stand-in groups this machine's files together in Drive; the
     // folder just won't be renamed to match the final MachineID.
     tempId: `wizard-${Date.now()}`,
-    category: '', name: '', brand: '', model: '', type: '', description: '',
+    category: '', name: '', brand: '', model: '', type: '', bcCode: '', description: '',
     specification: hkEmptySpec(),
     coverImage: null,
     gallery: hkEmptyGroupedImages(HK_GALLERY_GROUPS),
@@ -94,6 +94,12 @@ function hkStep1Html(){
           <input class="hk-input" id="in-type" value="${hkEscapeHtml(hkWizard.type)}" placeholder="เช่น เครื่องชงกาแฟ 2 กรุ๊ป">
         </div>
       </div>
+      <div class="hk-row2">
+        <div class="hk-field">
+          <label class="hk-field__label">รหัส BC</label>
+          <input class="hk-input" id="in-bcCode" value="${hkEscapeHtml(hkWizard.bcCode)}" placeholder="เช่น BC-10234">
+        </div>
+      </div>
       <div class="hk-field">
         <label class="hk-field__label">รายละเอียด</label>
         <textarea class="hk-textarea" id="in-description" placeholder="คำอธิบายเครื่องจักรโดยย่อ">${hkEscapeHtml(hkWizard.description)}</textarea>
@@ -109,7 +115,7 @@ function hkWireStep1(){
       document.getElementById('err-category').style.display = 'none';
     });
   });
-  ['name','brand','model','type','description'].forEach(key => {
+  ['name','brand','model','type','bcCode','description'].forEach(key => {
     const el = document.getElementById(`in-${key}`);
     el?.addEventListener('input', (e) => { hkWizard[key] = e.target.value; });
   });
@@ -350,6 +356,7 @@ function hkStep6Html(){
         <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ชื่อเครื่อง</div><div class="hk-kv-grid__value">${hkEscapeHtml(hkWizard.name || '-')}</div></div>
         <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ยี่ห้อ / รุ่น</div><div class="hk-kv-grid__value">${hkEscapeHtml(hkWizard.brand || '-')} / ${hkEscapeHtml(hkWizard.model || '-')}</div></div>
         <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ประเภท</div><div class="hk-kv-grid__value">${hkEscapeHtml(hkWizard.type || '-')}</div></div>
+        <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">รหัส BC</div><div class="hk-kv-grid__value">${hkEscapeHtml(hkWizard.bcCode || '-')}</div></div>
         <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">รายการอะไหล่</div><div class="hk-kv-grid__value">${partsCount} รายการ</div></div>
       </div>
     </div>`;
@@ -439,7 +446,7 @@ function hkBuildMachinePayload(){
   return {
     category: hkWizard.category,
     name: hkWizard.name.trim(), brand: hkWizard.brand.trim(), model: hkWizard.model.trim(),
-    type: hkWizard.type.trim(), description: hkWizard.description.trim(),
+    type: hkWizard.type.trim(), bcCode: hkWizard.bcCode.trim(), description: hkWizard.description.trim(),
     coverImageUrl: hkWizard.coverImage || '',
     specification: hkWizard.specification,
     parts, images, documents,
@@ -487,6 +494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   hkResetWizard();
   document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = hkIcon(el.getAttribute('data-icon')));
   hkWireSidebarToggle();
+  hkAuthRenderSidebarFooter();
   hkRenderStep();
 
   await hkBootstrapMachines();

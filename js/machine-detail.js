@@ -948,6 +948,7 @@ function hkRenderNotFound(){
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('hk-detail-root').innerHTML = `
     <div class="hk-empty"><div class="hk-empty__icon">⏳</div><h3>กำลังโหลดข้อมูล...</h3></div>`;
+  hkAuthRenderSidebarFooter();
 
   await hkBootstrapMachines();
   if(HK_LAST_LOAD_ERROR) hkToast('โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ กำลังแสดงข้อมูลตัวอย่างแทน');

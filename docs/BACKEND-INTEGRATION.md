@@ -160,6 +160,88 @@ triggers a preflight that Apps Script can't answer, so the request fails.
 Sending it as `text/plain` keeps it a "simple request" (no preflight) —
 Code.gs still parses `e.postData.contents` as JSON normally on the way in.
 
+## Login / access control
+
+The whole web app now requires signing in — no page or API action works
+without a valid session, **except** `login` itself. This is a
+self-managed email + password system (not Google Sign-In): passwords
+are never handled or seen by anyone but the person typing them, and
+never leave the browser except over HTTPS to `Code.gs`.
+
+**New Sheet tab: `Users`**
+
+| Email | PasswordHash | Salt | Status | CreatedAt | LastLoginAt |
+|---|---|---|---|---|---|
+
+- `Email` — always compared lowercase; must end in `@hillkoff.com` or
+  `@hillkoff.co.th` (enforced both client-side in `login.js` and
+  server-side in `Code.gs`'s `login()` / `isAllowedDomain()`)
+- `PasswordHash` — `base64(SHA-256(password + "|" + Salt))`, computed by
+  `Code.gs`'s `hashPassword()`. Plaintext passwords are never written to
+  the Sheet at any point.
+- `Salt` — a random UUID generated per-user when their password is set
+- `Status` — `active` or `disabled`. A disabled account fails login
+  immediately and any session token they were already holding stops
+  working on their very next request (`requireAuth()` re-checks Status
+  on every call, not just at login time)
+
+**There is no self-registration and no `createUser`/`register` Web App
+action on purpose** — accounts only exist because someone with edit
+access to the Google Sheet created one. Managing users happens entirely
+through a custom menu added to the Sheet itself:
+
+1. Open the Google Sheet → a new **HILLKOFF Admin** menu appears next to
+   Extensions (added by `onOpen()` in `Code.gs` — reload the Sheet tab
+   once after deploying if it doesn't show up yet)
+2. **เพิ่ม / รีเซ็ตรหัสผ่านผู้ใช้** — prompts for an email (validated
+   against the two allowed domains) then a password (min. 8 characters),
+   hashes it, and creates the row if it doesn't exist yet or overwrites
+   the password if it does. Same flow for "add a new person" and "reset
+   someone's forgotten password."
+3. **ปิดการใช้งานผู้ใช้ / เปิดการใช้งานผู้ใช้** — toggles `Status`
+   without deleting the row or their history.
+
+**Session tokens** are stateless and signed, not stored server-side:
+`base64url(JSON {email, exp}).base64url(HMAC-SHA256(that, AUTH_SECRET))`.
+`AUTH_SECRET` auto-generates itself into Script Properties the first
+time any token is created or verified — nobody needs to set it manually,
+and nobody can read it back out short of opening the script's Project
+Settings. Sessions last 30 days (`HK_SESSION_TTL_MS` in `Code.gs`) and
+verifying one is just recomputing the signature — no session table to
+query, so login state survives Apps Script's executions restarting
+between requests. **To force-expire every session at once** (e.g. after
+a suspected leak), delete the `AUTH_SECRET` script property — every
+existing token instantly fails signature verification.
+
+**Frontend pieces:**
+- `js/auth.js` — token storage (`localStorage`), expiry check, logout,
+  renders the logged-in email + a logout button under the sidebar
+  footer on every page (`hkAuthRenderSidebarFooter()`)
+- A small inline `<script>` at the very top of each protected page's
+  `<head>` (before any CSS) redirects to `login.html?redirect=<page>`
+  before anything renders, if there's no valid-looking token. This is a
+  UX nicety only — the real gate is server-side.
+- `js/api-client.js` — every request now carries the token (`?token=`
+  on GET, `token` field in the POST body) and centrally redirects to
+  `login.html` if the backend ever responds `{error:'unauthorized'}`
+- `html/login.html` + `js/login.js` + `css/login.css` — the sign-in form
+  itself, with the same domain check duplicated client-side for instant
+  feedback (server-side check is the one that actually matters)
+
+**What this system deliberately doesn't do:** rate-limit login attempts,
+force periodic password rotation, or send password-reset emails (resets
+go through the admin menu instead). Reasonable for an internal tool
+behind a "you already have to know this URL" barrier; revisit if the
+data behind it becomes more sensitive.
+
+**Important: this login only gates the web app, not AppSheet.** AppSheet
+connects straight to the Google Sheet (see the Architecture diagram
+above) — it never goes through `Code.gs`, so it never hits `requireAuth()`.
+Anyone with AppSheet access to the Sheet bypasses this login entirely.
+Keep relying on AppSheet's own **Security → Require sign-in** setting
+(already noted in `docs/APPSHEET-DESIGN.md` §6) as the real access
+boundary for that surface — the two systems don't share a login.
+
 ## Machine evaluation / approval-to-sell workflow
 
 Added to the bottom of the **Internal Structure** tab: five departments
@@ -250,4 +332,7 @@ adapt from there.
 - [ ] Swap the three functions in `machines-data.js` as above (make callers `async`)
 - [ ] Seed the Sheet with the same demo machines currently in `HK_MACHINES_SEED`
       (or leave the Sheet empty and let the team add real machines from day one)
+- [ ] Add the `Users` tab (see "Login / access control" above), reload the Sheet
+      once so the **HILLKOFF Admin** menu appears, then create at least one
+      account via **เพิ่ม / รีเซ็ตรหัสผ่านผู้ใช้** so someone can actually log in
 - [ ] Set up AppSheet — see `docs/APPSHEET-DESIGN.md`

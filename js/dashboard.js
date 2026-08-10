@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   hkRenderIcons();
   hkWireSearch();
   hkWireSidebarToggle();
+  hkAuthRenderSidebarFooter();
   hkRenderSkeleton();
 
   await hkBootstrapMachines();
