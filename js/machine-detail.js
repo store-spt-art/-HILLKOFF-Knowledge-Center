@@ -11,6 +11,8 @@ let HK_ACTIVE_TAB = 'overview';
 let HK_EDIT_STATE = { overview: false, specification: false, internalImages: false, galleryImages: false, internalNotes: false };
 // Live Quill editor instance while the internal-notes rich-text form is open.
 let HK_QUILL_INSTANCE = null;
+// Live Quill editor instance while the Overview description rich-text form is open.
+let HK_OVERVIEW_QUILL_INSTANCE = null;
 // Add/edit state for the Parts List inline form.
 let HK_PART_FORM_STATE = { mode: null, partId: null };
 
@@ -86,11 +88,14 @@ const HK_TABS = [
 
 function hkPanelOverview(m){
   if(HK_EDIT_STATE.overview) return hkOverviewEditFormHtml(m);
+  const plain = (m.description || '').replace(/<[^>]*>/g, '').trim();
   return `
     <div class="hk-panel-actionbar">
       <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-edit-overview>✎ แก้ไขข้อมูลเครื่อง</button>
     </div>
-    <p style="max-width:720px;">${hkEscapeHtml(m.description || 'ยังไม่มีคำอธิบายสำหรับเครื่องจักรนี้')}</p>
+    <div class="hk-overview-description ql-editor">
+      ${plain ? m.description : '<p class="hk-internal-notes__empty">ยังไม่มีคำอธิบายสำหรับเครื่องจักรนี้</p>'}
+    </div>
     <div class="hk-kv-grid">
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ชื่อเครื่อง</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.name)}</div></div>
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ยี่ห้อ</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.brand || '-')}</div></div>
@@ -138,7 +143,9 @@ function hkOverviewEditFormHtml(m){
       </div>
       <div class="hk-field">
         <label class="hk-field__label">คำอธิบาย</label>
-        <textarea class="hk-textarea" id="hk-edit-description">${hkEscapeHtml(m.description || '')}</textarea>
+        <div id="hk-edit-description-wrap" class="hk-quill-wrap">
+          <div id="hk-edit-description-editor"></div>
+        </div>
       </div>
       <div class="hk-field">
         <label class="hk-field__label">รูปหน้าปก</label>
@@ -170,6 +177,7 @@ function hkWireOverviewPanel(machine){
   const cancelBtn = panel.querySelector('#hk-edit-overview-cancel');
   if(cancelBtn) cancelBtn.addEventListener('click', () => {
     HK_EDIT_STATE.overview = false;
+    HK_OVERVIEW_QUILL_INSTANCE = null;
     hkRerenderPanel(machine, 'overview');
   });
 
@@ -188,7 +196,7 @@ function hkWireOverviewPanel(machine){
     const model = panel.querySelector('#hk-edit-model').value.trim();
     const type = panel.querySelector('#hk-edit-type').value.trim();
     const bcCode = panel.querySelector('#hk-edit-bccode').value.trim();
-    const description = panel.querySelector('#hk-edit-description').value.trim();
+    const description = HK_OVERVIEW_QUILL_INSTANCE ? HK_OVERVIEW_QUILL_INSTANCE.root.innerHTML : (machine.description || '');
     const fileInput = panel.querySelector('#hk-edit-cover-input');
     const file = fileInput.files && fileInput.files[0];
     try{
@@ -203,10 +211,32 @@ function hkWireOverviewPanel(machine){
       await updateMachineInfo(machine.id, { category, name, brand, model, type, bcCode, description, coverImage });
       if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
       HK_EDIT_STATE.overview = false;
+      HK_OVERVIEW_QUILL_INSTANCE = null;
       hkRenderBreadcrumb(machine);
       hkRenderDetail(machine);
     }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
   });
+
+  const editorEl = panel.querySelector('#hk-edit-description-editor');
+  if(editorEl && window.Quill){
+    HK_OVERVIEW_QUILL_INSTANCE = new Quill(editorEl, {
+      theme: 'snow',
+      placeholder: 'คำอธิบายเครื่องจักรโดยย่อ...',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ color: [] }, { background: [] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ align: [] }],
+          ['blockquote', 'code-block'],
+          ['link'],
+          ['clean'],
+        ],
+      },
+    });
+    HK_OVERVIEW_QUILL_INSTANCE.root.innerHTML = machine.description || '';
+  }
 }
 
 function hkPanelSpecification(m){
@@ -372,7 +402,7 @@ function hkInternalNotesSectionHtml(m){
         <div class="hk-internal-notes__head">
           <div class="hk-internal-notes__title">การประเมินเชิงลึกจากช่าง</div>
         </div>
-        <div id="hk-internal-notes-editor-wrap">
+        <div id="hk-internal-notes-editor-wrap" class="hk-quill-wrap">
           <div id="hk-internal-notes-editor"></div>
         </div>
         <div class="hk-wizard-nav">

@@ -127,40 +127,46 @@
 .hk-internal-notes__body p{ color: var(--hk-text); }
 .hk-internal-notes__empty{ color: var(--hk-text-dim); font-style: italic; margin:0; }
 
+/* ---------- Overview description (rich text, same Quill setup) ---------- */
+.hk-overview-description{
+  max-width: 720px; color: var(--hk-text); padding: 0 !important; margin-bottom: 20px;
+}
+.hk-overview-description p{ color: var(--hk-text); }
+
 /* Quill editor — dark theme override to match the rest of the app */
-#hk-internal-notes-editor-wrap .ql-toolbar.ql-snow{
+.hk-quill-wrap .ql-toolbar.ql-snow{
   background: var(--hk-surface-2); border-color: var(--hk-border);
   border-radius: var(--hk-radius-md) var(--hk-radius-md) 0 0;
 }
-#hk-internal-notes-editor-wrap .ql-container.ql-snow{
+.hk-quill-wrap .ql-container.ql-snow{
   background: var(--hk-surface); border-color: var(--hk-border); font-family: var(--hk-font-body); font-size: 14px;
   border-radius: 0 0 var(--hk-radius-md) var(--hk-radius-md);
 }
-#hk-internal-notes-editor-wrap .ql-editor{ min-height: 220px; color: var(--hk-text); }
-#hk-internal-notes-editor-wrap .ql-editor.ql-blank::before{ color: var(--hk-text-dim); font-style: normal; }
-#hk-internal-notes-editor-wrap .ql-stroke{ stroke: var(--hk-text-dim); }
-#hk-internal-notes-editor-wrap .ql-fill{ fill: var(--hk-text-dim); }
-#hk-internal-notes-editor-wrap .ql-picker{ color: var(--hk-text-dim); }
-#hk-internal-notes-editor-wrap button:hover .ql-stroke,
-#hk-internal-notes-editor-wrap .ql-picker-label:hover .ql-stroke{ stroke: var(--hk-gold); }
-#hk-internal-notes-editor-wrap button:hover .ql-fill,
-#hk-internal-notes-editor-wrap .ql-picker-label:hover .ql-fill{ fill: var(--hk-gold); }
-#hk-internal-notes-editor-wrap button.ql-active .ql-stroke,
-#hk-internal-notes-editor-wrap .ql-picker-label.ql-active .ql-stroke{ stroke: var(--hk-gold); }
-#hk-internal-notes-editor-wrap button.ql-active .ql-fill{ fill: var(--hk-gold); }
-#hk-internal-notes-editor-wrap .ql-picker-label{ color: var(--hk-text-dim); }
-#hk-internal-notes-editor-wrap .ql-snow .ql-picker-options{
+.hk-quill-wrap .ql-editor{ min-height: 220px; color: var(--hk-text); }
+.hk-quill-wrap .ql-editor.ql-blank::before{ color: var(--hk-text-dim); font-style: normal; }
+.hk-quill-wrap .ql-stroke{ stroke: var(--hk-text-dim); }
+.hk-quill-wrap .ql-fill{ fill: var(--hk-text-dim); }
+.hk-quill-wrap .ql-picker{ color: var(--hk-text-dim); }
+.hk-quill-wrap button:hover .ql-stroke,
+.hk-quill-wrap .ql-picker-label:hover .ql-stroke{ stroke: var(--hk-gold); }
+.hk-quill-wrap button:hover .ql-fill,
+.hk-quill-wrap .ql-picker-label:hover .ql-fill{ fill: var(--hk-gold); }
+.hk-quill-wrap button.ql-active .ql-stroke,
+.hk-quill-wrap .ql-picker-label.ql-active .ql-stroke{ stroke: var(--hk-gold); }
+.hk-quill-wrap button.ql-active .ql-fill{ fill: var(--hk-gold); }
+.hk-quill-wrap .ql-picker-label{ color: var(--hk-text-dim); }
+.hk-quill-wrap .ql-snow .ql-picker-options{
   background: var(--hk-surface-2); border-color: var(--hk-border) !important; box-shadow: var(--hk-shadow-2);
 }
-#hk-internal-notes-editor-wrap .ql-snow .ql-picker.ql-expanded .ql-picker-label{ border-color: var(--hk-border); }
-#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip{
+.hk-quill-wrap .ql-snow .ql-picker.ql-expanded .ql-picker-label{ border-color: var(--hk-border); }
+.hk-quill-wrap .ql-snow .ql-tooltip{
   background: var(--hk-surface-2); border-color: var(--hk-border); color: var(--hk-text); box-shadow: var(--hk-shadow-2);
 }
-#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip input[type=text]{
+.hk-quill-wrap .ql-snow .ql-tooltip input[type=text]{
   background: var(--hk-surface); border-color: var(--hk-border); color: var(--hk-text);
 }
-#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip a.ql-action::after,
-#hk-internal-notes-editor-wrap .ql-snow .ql-tooltip a.ql-remove::before{ color: var(--hk-gold); }
+.hk-quill-wrap .ql-snow .ql-tooltip a.ql-action::after,
+.hk-quill-wrap .ql-snow .ql-tooltip a.ql-remove::before{ color: var(--hk-gold); }
 
 /* ---------- Machine evaluation / approval-to-sell ---------- */
 .hk-approval{ margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--hk-border); }
