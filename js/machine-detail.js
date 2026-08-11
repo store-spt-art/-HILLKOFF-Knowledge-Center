@@ -455,10 +455,9 @@ function hkRerenderInternalNotes(machine){
 /* ---------- Machine evaluation / approval-to-sell ---------- */
 
 function hkApprovalStatusBadgeHtml(m){
-  const approved = hkApprovalStatus(m) === 'approved';
-  return `<span class="hk-approval-status hk-approval-status--${approved ? 'approved' : 'pending'}">
-    ${approved ? '✓ อนุมัตินำเข้าขายแล้ว' : '⏳ รอการอนุมัติ'}
-  </span>`;
+  const status = hkApprovalStatus(m);
+  const label = status === 'approved' ? '✓ อนุมัตินำเข้าขายแล้ว' : status === 'rejected' ? '✕ ไม่อนุมัติ' : '⏳ รอการอนุมัติ';
+  return `<span class="hk-approval-status hk-approval-status--${status}">${label}</span>`;
 }
 
 function hkApprovalDeptHtml(m, dept){
@@ -508,7 +507,8 @@ function hkApprovalDeptHtml(m, dept){
 
 function hkApprovalMdHtml(m){
   const md = m.approval?.mdApproval;
-  if(md){
+  const locked = hkIsApprovalLocked(m);
+  if(md && locked){
     return `
       <div class="hk-approval-md is-approved">
         <div class="hk-approval-md__label">${HK_MD_APPROVAL_LABEL}</div>
@@ -517,15 +517,25 @@ function hkApprovalMdHtml(m){
       </div>`;
   }
   const ready = hkApprovalDepartmentsComplete(m.approval);
+  const wasRejected = md && md.decision === 'rejected';
+  const rejectedNote = wasRejected ? `
+    <div class="hk-approval-md__rejected-note">
+      ❌ ไม่อนุมัติล่าสุดโดย <strong>${hkEscapeHtml(md.name)}</strong> <span class="hk-approval-sig__date">${hkEscapeHtml(md.date)}</span>
+      ${md.comment ? `<div class="hk-approval-sig__comment">${hkEscapeHtml(md.comment)}</div>` : ''}
+    </div>` : '';
   return `
-    <div class="hk-approval-md">
+    <div class="hk-approval-md${wasRejected ? ' is-rejected' : ''}">
       <div class="hk-approval-md__label">${HK_MD_APPROVAL_LABEL}</div>
-      <p class="hk-approval-md__hint">${ready ? 'ทุกแผนกลงชื่อครบแล้ว พร้อมให้ผู้บริหาร/MD อนุมัตินำเข้าขาย' : 'ต้องรอให้ทุกแผนกด้านบนลงชื่อครบก่อน จึงจะอนุมัติได้'}</p>
+      ${rejectedNote}
+      <p class="hk-approval-md__hint">${ready ? 'ทุกแผนกลงชื่อครบแล้ว พร้อมให้ผู้บริหาร/MD พิจารณา' : 'ต้องรอให้ทุกแผนกด้านบนลงชื่อครบก่อน จึงจะอนุมัติได้ (กด "ไม่อนุมัติ" ได้ทันทีโดยไม่ต้องรอ)'}</p>
       <div class="hk-approval-dept__form" data-approval-md-form>
-        <input type="text" placeholder="ชื่อผู้อนุมัติ" data-approval-md-name ${ready ? '' : 'disabled'}>
-        <input type="date" data-approval-md-date ${ready ? '' : 'disabled'}>
-        <textarea placeholder="ข้อความการประเมิน / ความเห็นการอนุมัติ" data-approval-md-comment rows="2" ${ready ? '' : 'disabled'}></textarea>
-        <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-approval-md-approve ${ready ? '' : 'disabled'}>อนุมัตินำเข้าขาย</button>
+        <input type="text" placeholder="ชื่อผู้พิจารณา" data-approval-md-name>
+        <input type="date" data-approval-md-date>
+        <textarea placeholder="ข้อความการประเมิน / ความเห็น (จำเป็นถ้าเลือกไม่อนุมัติ)" data-approval-md-comment rows="2"></textarea>
+        <div style="display:flex; gap:8px; width:100%;">
+          <button type="button" class="hk-btn hk-btn--danger hk-btn--sm" data-approval-md-decision="rejected">✕ ไม่อนุมัติ</button>
+          <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-approval-md-decision="approved" ${ready ? '' : 'disabled'}>อนุมัตินำเข้าขาย</button>
+        </div>
       </div>
     </div>`;
 }
@@ -592,22 +602,26 @@ function hkWireApprovalSection(machine){
     });
   });
 
-  const mdBtn = root.querySelector('[data-approval-md-approve]');
-  if(mdBtn){
-    mdBtn.addEventListener('click', async () => {
+  root.querySelectorAll('[data-approval-md-decision]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const decision = btn.dataset.approvalMdDecision; // 'approved' | 'rejected'
       const name = root.querySelector('[data-approval-md-name]').value.trim();
       const date = root.querySelector('[data-approval-md-date]').value;
       const comment = root.querySelector('[data-approval-md-comment]').value.trim();
-      if(!name){ hkToast('กรุณาระบุชื่อผู้อนุมัติ'); return; }
-      if(!confirm('ยืนยันการอนุมัตินำเข้าขาย? หลังจากนี้จะไม่สามารถแก้ไขรายชื่อผู้ประเมินได้อีก')) return;
+      if(!name){ hkToast('กรุณาระบุชื่อผู้พิจารณา'); return; }
+      if(decision === 'rejected' && !comment){ hkToast('กรุณาระบุเหตุผลที่ไม่อนุมัติ'); return; }
+      const confirmMsg = decision === 'approved'
+        ? 'ยืนยันการอนุมัตินำเข้าขาย? หลังจากนี้จะไม่สามารถแก้ไขรายชื่อผู้ประเมินได้อีก'
+        : 'ยืนยันการไม่อนุมัติ?';
+      if(!confirm(confirmMsg)) return;
       try{
-        await setMdApproval(machine.id, name, date, comment);
+        await setMdDecision(machine.id, decision, name, date, comment);
         if(HK_LAST_APPROVAL_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
         hkRenderApprovalSection(machine);
         hkUpdateHeaderApprovalBadge(machine);
       }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
     });
-  }
+  });
 }
 
 // Keeps the top badge next to the machine name in sync after MD approval,

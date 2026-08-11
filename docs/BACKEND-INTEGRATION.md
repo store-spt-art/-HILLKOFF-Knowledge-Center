@@ -253,26 +253,40 @@ below still needs to be added there by whoever maintains that file.
 
 **New Sheet tab: `Approvals`**
 
-| MachineID | Department | Name | SignedDate | Comment | SubDepartment |
-|---|---|---|---|---|---|
+> **If you already have a live `Approvals` tab:** it needs one new header
+> added — `Decision` — for the reject/approve feature below.
+
+| MachineID | Department | Name | SignedDate | Comment | SubDepartment | Decision |
+|---|---|---|---|---|---|---|
 
 - `Department` — one of `technicianDept, technicianAdmin, partsAdmin, sales, purchasing, md`
-  (`md` rows are the final MD/executive sign-off; everything else is a
+  (`md` rows are the final MD/executive decision; everything else is a
   department signature). One row per signature — `technicianDept` and
-  `sales` can have multiple rows for the same `MachineID`.
+  `sales` can have multiple rows for the same `MachineID`. There is at
+  most one `md` row per `MachineID` at any time — a new decision
+  overwrites the old one (see `updateApproval` below).
 - `Comment` — free-text evaluation note the signer typed in, for any
-  department (including `md`). Optional, can be blank.
+  department (including `md`). Optional for departments; **required**
+  when an `md` row's `Decision` is `rejected`, so there's always a
+  reason on record for departments to act on.
 - `SubDepartment` — only used on `sales` rows: the salesperson's own
   sub-team/branch (e.g. "ทีมขายภาคเหนือ"), shown after their name on the
   web app. Blank for every other department.
+- `Decision` — only used on `md` rows: `approved` or `rejected`. Only
+  `approved` locks the machine's whole evaluation section (no more
+  edits by anyone). `rejected` is not final — departments can keep
+  editing/re-signing and the MD can revisit and approve later. Rows
+  written before this column existed have no value here and are
+  treated as `approved` for backward compatibility.
 - Required signer counts (enforced client-side, not by the Sheet):
   แผนกช่าง (`technicianDept`) 2, ธุรการช่าง (`technicianAdmin`) 1,
   ธุรการอะไหล่ (`partsAdmin`) 1, ทีมขาย (`sales`) at least 2, แผนกจัดซื้อ
-  (`purchasing`) 1, then exactly one `md` row once approved.
+  (`purchasing`) 1 — required before an `approved` `md` decision, but
+  **not** required before a `rejected` one (an MD can reject early).
 
 **New Code.gs action: `updateApproval`**
 
-Payload: `{ machineId, approval: { departments: { technicianDept: [{name,date,comment}], ..., sales: [{name,date,comment,subDept}] }, mdApproval: {name,date,comment} | null } }`.
+Payload: `{ machineId, approval: { departments: { technicianDept: [{name,date,comment}], ..., sales: [{name,date,comment,subDept}] }, mdApproval: {name,date,comment,decision} | null } }`.
 Implementation should replace all `Approvals` rows for that `MachineID`
 with the full set derived from the payload (simplest: delete existing
 rows for that ID, then re-insert one row per signature — same

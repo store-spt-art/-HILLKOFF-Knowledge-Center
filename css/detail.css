@@ -172,6 +172,7 @@
 }
 .hk-approval-status--approved{ background: rgba(76,175,109,.15); color: var(--hk-success); border-color: rgba(76,175,109,.35); }
 .hk-approval-status--pending{ background: rgba(229,169,62,.15); color: var(--hk-warn); border-color: rgba(229,169,62,.35); }
+.hk-approval-status--rejected{ background: rgba(229,72,77,.15); color: var(--hk-danger); border-color: rgba(229,72,77,.35); }
 
 .hk-approval-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 16px; margin-bottom: 20px; }
 .hk-approval-dept{ background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-lg); padding: 16px; display:flex; flex-direction:column; gap:10px; }
@@ -210,6 +211,11 @@
   padding: 18px; display:flex; flex-direction:column; gap:12px;
 }
 .hk-approval-md.is-approved{ background: rgba(76,175,109,.1); border-color: rgba(76,175,109,.35); }
+.hk-approval-md.is-rejected{ background: rgba(229,72,77,.06); border-color: rgba(229,72,77,.3); }
+.hk-approval-md__rejected-note{
+  background: rgba(229,72,77,.1); border:1px solid rgba(229,72,77,.3); border-radius: var(--hk-radius-md);
+  padding: 10px 14px; font-size:13px;
+}
 .hk-approval-md__label{ font-size:14px; font-weight:700; }
 .hk-approval-md__hint{ font-size:12.5px; color: var(--hk-text-dim); margin:0; }
 .hk-approval-md__signed{ display:flex; align-items:center; gap:10px; font-size:14px; }

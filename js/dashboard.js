@@ -75,7 +75,8 @@ function hkMachineCardHtml(m){
     ? `<img src="${hkDriveImgUrl(m.coverImage)}" alt="${hkEscapeHtml(m.name)}">`
     : hkIcon(meta.icon);
   const isNew = m.__isNew ? '<span class="hk-badge hk-badge--new hk-mcard__badge">ใหม่</span>' : '';
-  const approved = hkApprovalStatus(m) === 'approved';
+  const approvalStatus = hkApprovalStatus(m);
+  const approvalLabel = approvalStatus === 'approved' ? '✓ อนุมัติแล้ว' : approvalStatus === 'rejected' ? '✕ ไม่อนุมัติ' : '⏳ รออนุมัติ';
   return `
     <article class="hk-mcard" data-id="${m.id}">
       <div class="hk-mcard__media">${isNew}${media}</div>
@@ -85,8 +86,8 @@ function hkMachineCardHtml(m){
         <div class="hk-mcard__meta">${hkEscapeHtml(m.brand || '')}${m.model ? ' · ' + hkEscapeHtml(m.model) : ''}</div>
         <div class="hk-mcard__id">${m.id}</div>
         <div style="margin-top:6px;">
-          <span class="hk-approval-status hk-approval-status--${approved ? 'approved' : 'pending'}" style="font-size:11px;padding:3px 9px;">
-            ${approved ? '✓ อนุมัติแล้ว' : '⏳ รออนุมัติ'}
+          <span class="hk-approval-status hk-approval-status--${approvalStatus}" style="font-size:11px;padding:3px 9px;">
+            ${approvalLabel}
           </span>
         </div>
       </div>

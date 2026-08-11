@@ -94,15 +94,21 @@ function hkApprovalDepartmentsComplete(approval){
   return HK_APPROVAL_DEPARTMENTS.every(d => (approval.departments[d.key] || []).length >= d.required);
 }
 
-// 'approved' | 'pending' — drives the Dashboard badge.
+// 'approved' | 'pending' | 'rejected' — drives the Dashboard badge.
+// Legacy machines approved before the reject/decision field existed have
+// mdApproval set but no `decision` — treated as 'approved' for compatibility.
 function hkApprovalStatus(machine){
-  return machine?.approval?.mdApproval ? 'approved' : 'pending';
+  const md = machine?.approval?.mdApproval;
+  if(!md) return 'pending';
+  return md.decision === 'rejected' ? 'rejected' : 'approved';
 }
 
-// Once the MD has signed, the entire section (every department + the
-// MD block) is locked and read-only.
+// Once the MD has *approved* (not rejected) the entire section (every
+// department + the MD block) is locked and read-only. A rejection is not
+// final — departments can keep editing and the MD can revisit later.
 function hkIsApprovalLocked(machine){
-  return !!machine?.approval?.mdApproval;
+  const md = machine?.approval?.mdApproval;
+  return !!md && md.decision !== 'rejected';
 }
 
 function hkEmptySpec(){
@@ -361,12 +367,22 @@ async function removeApprovalSignature(machineId, deptKey, index){
   return machine.approval;
 }
 
-async function setMdApproval(machineId, name, date, comment){
+// decision: 'approved' | 'rejected'. Approving requires every department
+// to have met its minimum; rejecting doesn't (an MD can reject early
+// without waiting for signatures) but does require a comment, so there's
+// always a reason recorded for departments to act on.
+async function setMdDecision(machineId, decision, name, date, comment){
   const machine = getMachineById(machineId);
   if(!machine) throw new Error('Machine not found');
   if(hkIsApprovalLocked(machine)) throw new Error('อนุมัติแล้ว ไม่สามารถแก้ไขได้');
-  if(!hkApprovalDepartmentsComplete(machine.approval)) throw new Error('ยังลงชื่อไม่ครบทุกแผนก');
-  machine.approval.mdApproval = { name: (name || '').trim(), date: date || new Date().toISOString().slice(0, 10), comment: (comment || '').trim() };
+  if(decision === 'approved' && !hkApprovalDepartmentsComplete(machine.approval)) throw new Error('ยังลงชื่อไม่ครบทุกแผนก');
+  if(decision === 'rejected' && !(comment || '').trim()) throw new Error('กรุณาระบุเหตุผลที่ไม่อนุมัติ');
+  machine.approval.mdApproval = {
+    name: (name || '').trim(),
+    date: date || new Date().toISOString().slice(0, 10),
+    comment: (comment || '').trim(),
+    decision: decision,
+  };
   await hkPersistApproval(machine);
   return machine.approval;
 }
@@ -559,7 +575,7 @@ window.hkApprovalStatus = hkApprovalStatus;
 window.hkIsApprovalLocked = hkIsApprovalLocked;
 window.addApprovalSignature = addApprovalSignature;
 window.removeApprovalSignature = removeApprovalSignature;
-window.setMdApproval = setMdApproval;
+window.setMdDecision = setMdDecision;
 window.updateMachineInfo = updateMachineInfo;
 window.updateSpecification = updateSpecification;
 window.updateInternalNotes = updateInternalNotes;
