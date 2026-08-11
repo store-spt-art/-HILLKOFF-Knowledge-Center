@@ -327,6 +327,52 @@ tabs, no new Sheet columns beyond what `Approvals` already added:
 part added in the same session can immediately be edited or deleted
 without a page reload.
 
+## HILLKOFFBOT AI (Gemini)
+
+HILLKOFFBOT no longer answers with the old client-side keyword matcher
+alone — it now proxies chat messages through `Code.gs` to **Google's
+Gemini API**, so it can answer conversationally (like ChatGPT/Gemini
+itself) instead of only matching a handful of hardcoded phrases. The
+keyword matcher (`hkAskBot()` in `js/ai-bot.js`) is kept as an automatic
+fallback if the AI call ever fails — missing API key, quota exceeded,
+network issue, etc. — so the bot always answers *something*.
+
+**Setup — one Script Property:**
+
+1. Get a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
+   (or your Google Cloud project if you're on a paid/enterprise setup)
+2. In the Apps Script editor: **Project Settings → Script Properties →
+   Add script property** → name it `GEMINI_API_KEY`, paste the key as
+   the value
+3. Deploy a new version as usual — no Sheet changes needed for this one
+
+**How grounding works:** every chat request rebuilds a compact plain-text
+summary of the whole machine database (`buildAiContext()` in `Code.gs`)
+— name, brand/model, category, specification, parts, and which document
+*types* exist (not file URLs) — and sends it as the model's system
+instruction alongside the conversation. Gemini answers using that context
+plus its own general knowledge, which is what lets it handle both
+"Rocket R9 ใช้ Pump อะไร" (grounded, from the Sheet) and "Dual Boiler ต่าง
+จาก Single Boiler ยังไง" (general coffee-machine knowledge) in the same
+chat. **Deliberately excluded from the context:** image URLs (not useful
+as text), `InternalNotes`, and everything in the `Approvals` tab
+(department signatures, MD comments) — none of that belongs in a general
+chat surface that also draws on the model's outside knowledge.
+
+**What this setup does NOT do:** live web search / browsing. The person
+explicitly chose "smarter answers from the existing database" over
+"real web search" when this was built — Gemini's answers outside the
+machine database come from its own training data, not a live search.
+Revisit `callGemini()` in `Code.gs` if browsing gets added later (Gemini
+supports a grounding/search tool, but it costs more and answers slower).
+
+**Cost & rate limits:** this is a paid API — every message (including
+the ~10-turn history sent for context, capped in `callGemini()`) counts
+against your Gemini quota/billing. There's no per-user rate limiting
+built in beyond the existing login requirement (`requireAuth()` still
+gates `aiChat` same as every other action) — add one if usage needs
+capping later.
+
 ## Internal Structure access gate — currently removed
 
 An earlier version of this project gated the Internal Structure tab behind
@@ -349,4 +395,7 @@ adapt from there.
 - [ ] Add the `Users` tab (see "Login / access control" above), reload the Sheet
       once so the **HILLKOFF Admin** menu appears, then create at least one
       account via **เพิ่ม / รีเซ็ตรหัสผ่านผู้ใช้** so someone can actually log in
+- [ ] Get a Gemini API key and add it as the `GEMINI_API_KEY` script property
+      (see "HILLKOFFBOT AI (Gemini)" above) so the AI assistant works —
+      it still works without this, just falls back to the old keyword bot
 - [ ] Set up AppSheet — see `docs/APPSHEET-DESIGN.md`

@@ -850,12 +850,12 @@ function hkPanelAI(m){
   return `
     <div class="hk-ai-panel">
       <div class="hk-ai-panel__log" id="hk-ai-log">
-        <div class="hk-ai-msg hk-ai-msg--bot">สวัสดีครับ ผมคือ HILLKOFFBOT ถามข้อมูลของ <strong>${hkEscapeHtml(m.name)}</strong> ได้เลยครับ เช่น Pump, Boiler, อะไหล่ หรือเอกสารต่าง ๆ</div>
+        <div class="hk-ai-msg hk-ai-msg--bot">สวัสดีครับ ผมคือ HILLKOFFBOT ถามข้อมูลของ <strong>${hkEscapeHtml(m.name)}</strong> หรือคำถามทั่วไปเกี่ยวกับเครื่องชงกาแฟได้เลยครับ</div>
       </div>
       <div class="hk-ai-panel__suggestions">
         <button class="hk-ai-suggestion" data-q="ใช้ Pump อะไร">ใช้ Pump อะไร</button>
         <button class="hk-ai-suggestion" data-q="ใช้ Boiler กี่ลิตร">ใช้ Boiler กี่ลิตร</button>
-        <button class="hk-ai-suggestion" data-q="ขอดู Wiring Diagram">ขอดู Wiring Diagram</button>
+        <button class="hk-ai-suggestion" data-q="เหมาะกับร้านแบบไหน">เหมาะกับร้านแบบไหน</button>
       </div>
       <div class="hk-ai-panel__input">
         <input type="text" id="hk-ai-input" placeholder="พิมพ์คำถามเกี่ยวกับ ${hkEscapeHtml(m.name)}...">
@@ -901,13 +901,29 @@ function hkWireAIPanel(machine){
   const send = document.getElementById('hk-ai-send');
   if(!log || !input || !send) return;
 
-  function ask(text){
-    if(!text.trim()) return;
-    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--user">${hkEscapeHtml(text)}</div>`);
-    const answer = hkAskBot(text, machine);
-    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot">${hkEscapeHtml(answer)}</div>`);
-    log.scrollTop = log.scrollHeight;
+  const history = [];
+
+  async function ask(text){
+    const q = text.trim();
+    if(!q) return;
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--user">${hkEscapeHtml(q)}</div>`);
     input.value = '';
+    input.disabled = true;
+    send.disabled = true;
+    const typingId = 'hk-ai-typing-' + Date.now();
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot" id="${typingId}">กำลังพิมพ์...</div>`);
+    log.scrollTop = log.scrollHeight;
+
+    const result = await hkAskBotAI(q, machine, history);
+    document.getElementById(typingId)?.remove();
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot">${hkEscapeHtml(result.text)}</div>`);
+    log.scrollTop = log.scrollHeight;
+    if(!result.ok) hkToast('AI ไม่พร้อมใช้งานตอนนี้ ใช้คำตอบสำรองจากฐานข้อมูลแทน');
+
+    history.push({ role: 'user', text: q }, { role: 'bot', text: result.text });
+    input.disabled = false;
+    send.disabled = false;
+    input.focus();
   }
   send.addEventListener('click', () => ask(input.value));
   input.addEventListener('keydown', (e) => { if(e.key === 'Enter') ask(input.value); });

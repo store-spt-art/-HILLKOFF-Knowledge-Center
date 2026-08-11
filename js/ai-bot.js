@@ -1,9 +1,11 @@
 /* =========================================================
    HILLKOFF · ai-bot.js
-   HILLKOFFBOT has one job: answer questions FROM the machine
-   database. This is a simple client-side keyword matcher —
-   a stand-in for the real Sprint 5 AI backend. It never
-   reasons about repairs, stock, or anything outside the data.
+   HILLKOFFBOT now answers through Gemini (proxied via Code.gs so the
+   API key never reaches the browser — see hkApiAiChat in api-client.js),
+   grounded in the machine database. hkAskBot() below — the old
+   client-side keyword matcher — is kept as an automatic fallback if the
+   AI call ever fails (missing API key, quota, offline, etc.) so the bot
+   still answers *something* instead of erroring out.
    ========================================================= */
 
 function hkFindMachineInText(text){
@@ -15,6 +17,30 @@ function hkFindMachineInText(text){
   return all.find(m => lower.includes(m.id.toLowerCase())) || null;
 }
 
+// Preferred path: ask Gemini (via Code.gs), with conversation history for
+// context. scopedMachine (on a machine's own AI tab) is woven into the
+// question as a hint so the model knows which machine "it" refers to.
+// Returns { text, ok } — ok is false when this fell back to the
+// old keyword bot, so callers can show a subtle "AI ไม่พร้อมใช้งาน" note.
+async function hkAskBotAI(question, scopedMachine, history){
+  const q = (question || '').trim();
+  if(!q) return { text: 'พิมพ์คำถามเกี่ยวกับเครื่องจักรหรืออะไหล่ได้เลยครับ', ok: true };
+  try{
+    const prefixed = scopedMachine
+      ? `[กำลังดูข้อมูลเครื่อง: ${scopedMachine.name} (${scopedMachine.id})] ${q}`
+      : q;
+    const result = await hkApiAiChat(prefixed, history || []);
+    if(result && result.error) throw new Error(result.error);
+    if(!result || !result.reply) throw new Error('ไม่ได้รับคำตอบจาก AI');
+    return { text: result.reply, ok: true };
+  }catch(err){
+    console.error('Gemini chat failed, falling back to the keyword bot:', err);
+    return { text: hkAskBot(q, scopedMachine), ok: false, error: err };
+  }
+}
+
+// Fallback only — simple client-side keyword matcher. Never reasons
+// about repairs, stock, or anything outside the data.
 function hkAskBot(question, scopedMachine){
   const q = (question || '').trim();
   if(!q) return 'พิมพ์คำถามเกี่ยวกับเครื่องจักรหรืออะไหล่ในฐานข้อมูลได้เลยครับ';

@@ -15,7 +15,7 @@
    triggering one — Code.gs still JSON.parses the body normally.
    ========================================================= */
 
-const HK_API_URL = 'https://script.google.com/macros/s/AKfycbydCS4v5iN6JJRnOck3C8Ncl76EYoMo9h7xDfmxsAHAcpx_-FMf3DEYvSQ4tSoEh0d7/exec';
+const HK_API_URL = 'https://script.google.com/macros/s/AKfycbyeNS66PZc5dfZq6dBqkNegtIkUTIhuZelTyv_vOw-5xmKVmg-dxW6sXCm7oL9gtafg/exec';
 
 // Every request (GET or POST) carries the session token from auth.js.
 // If the backend ever comes back with {error:'unauthorized'} — missing
@@ -104,6 +104,12 @@ async function hkApiSetDocument(payload){
 }
 async function hkApiDeleteDocument(payload){
   return hkApiPost('deleteDocument', payload);
+}
+
+// history: [{role:'user'|'bot', text}] — the last few turns, sent so
+// Gemini has conversational context (Code.gs caps this to the last 10).
+async function hkApiAiChat(message, history){
+  return hkApiPost('aiChat', { message, history });
 }
 
 // file: a File object from an <input type="file">
