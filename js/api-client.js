@@ -15,7 +15,7 @@
    triggering one — Code.gs still JSON.parses the body normally.
    ========================================================= */
 
-const HK_API_URL = 'https://script.google.com/macros/s/AKfycbwP-Ap2MWVAW03ZKCWR5ZXfZYYcb5oBoLSrrDbyWd78Zuhf7crPc9TOg0NycCQo_r16/exec';
+const HK_API_URL = 'https://script.google.com/macros/s/AKfycbweHRqSpf1i6qwBNm8eC8KONBhuKvHE3PV5Um6gG51S1aweQZPW4hHw11tSrcudyXer/exec';
 
 // Every request (GET or POST) carries the session token from auth.js.
 // If the backend ever comes back with {error:'unauthorized'} — missing
