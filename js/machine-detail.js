@@ -11,8 +11,6 @@ let HK_ACTIVE_TAB = 'overview';
 let HK_EDIT_STATE = { overview: false, specification: false, internalImages: false, galleryImages: false, internalNotes: false };
 // Live Quill editor instance while the internal-notes rich-text form is open.
 let HK_QUILL_INSTANCE = null;
-// Live Quill editor instance while the Overview description rich-text form is open.
-let HK_OVERVIEW_QUILL_INSTANCE = null;
 // Add/edit state for the Parts List inline form.
 let HK_PART_FORM_STATE = { mode: null, partId: null };
 
@@ -88,14 +86,11 @@ const HK_TABS = [
 
 function hkPanelOverview(m){
   if(HK_EDIT_STATE.overview) return hkOverviewEditFormHtml(m);
-  const plain = (m.description || '').replace(/<[^>]*>/g, '').trim();
   return `
     <div class="hk-panel-actionbar">
       <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-edit-overview>✎ แก้ไขข้อมูลเครื่อง</button>
     </div>
-    <div class="hk-overview-description ql-editor">
-      ${plain ? m.description : '<p class="hk-internal-notes__empty">ยังไม่มีคำอธิบายสำหรับเครื่องจักรนี้</p>'}
-    </div>
+    <p style="max-width:720px;">${hkEscapeHtml(m.description || 'ยังไม่มีคำอธิบายสำหรับเครื่องจักรนี้')}</p>
     <div class="hk-kv-grid">
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ชื่อเครื่อง</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.name)}</div></div>
       <div class="hk-kv-grid__item"><div class="hk-kv-grid__label">ยี่ห้อ</div><div class="hk-kv-grid__value">${hkEscapeHtml(m.brand || '-')}</div></div>
@@ -143,9 +138,7 @@ function hkOverviewEditFormHtml(m){
       </div>
       <div class="hk-field">
         <label class="hk-field__label">คำอธิบาย</label>
-        <div id="hk-edit-description-wrap" class="hk-quill-wrap">
-          <div id="hk-edit-description-editor"></div>
-        </div>
+        <textarea class="hk-textarea" id="hk-edit-description">${hkEscapeHtml(m.description || '')}</textarea>
       </div>
       <div class="hk-field">
         <label class="hk-field__label">รูปหน้าปก</label>
@@ -177,7 +170,6 @@ function hkWireOverviewPanel(machine){
   const cancelBtn = panel.querySelector('#hk-edit-overview-cancel');
   if(cancelBtn) cancelBtn.addEventListener('click', () => {
     HK_EDIT_STATE.overview = false;
-    HK_OVERVIEW_QUILL_INSTANCE = null;
     hkRerenderPanel(machine, 'overview');
   });
 
@@ -196,7 +188,7 @@ function hkWireOverviewPanel(machine){
     const model = panel.querySelector('#hk-edit-model').value.trim();
     const type = panel.querySelector('#hk-edit-type').value.trim();
     const bcCode = panel.querySelector('#hk-edit-bccode').value.trim();
-    const description = HK_OVERVIEW_QUILL_INSTANCE ? HK_OVERVIEW_QUILL_INSTANCE.root.innerHTML : (machine.description || '');
+    const description = panel.querySelector('#hk-edit-description').value.trim();
     const fileInput = panel.querySelector('#hk-edit-cover-input');
     const file = fileInput.files && fileInput.files[0];
     try{
@@ -211,32 +203,10 @@ function hkWireOverviewPanel(machine){
       await updateMachineInfo(machine.id, { category, name, brand, model, type, bcCode, description, coverImage });
       if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
       HK_EDIT_STATE.overview = false;
-      HK_OVERVIEW_QUILL_INSTANCE = null;
       hkRenderBreadcrumb(machine);
       hkRenderDetail(machine);
     }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
   });
-
-  const editorEl = panel.querySelector('#hk-edit-description-editor');
-  if(editorEl && window.Quill){
-    HK_OVERVIEW_QUILL_INSTANCE = new Quill(editorEl, {
-      theme: 'snow',
-      placeholder: 'คำอธิบายเครื่องจักรโดยย่อ...',
-      modules: {
-        toolbar: [
-          [{ header: [1, 2, 3, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ color: [] }, { background: [] }],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ align: [] }],
-          ['blockquote', 'code-block'],
-          ['link'],
-          ['clean'],
-        ],
-      },
-    });
-    HK_OVERVIEW_QUILL_INSTANCE.root.innerHTML = machine.description || '';
-  }
 }
 
 function hkPanelSpecification(m){
@@ -402,7 +372,7 @@ function hkInternalNotesSectionHtml(m){
         <div class="hk-internal-notes__head">
           <div class="hk-internal-notes__title">การประเมินเชิงลึกจากช่าง</div>
         </div>
-        <div id="hk-internal-notes-editor-wrap" class="hk-quill-wrap">
+        <div id="hk-internal-notes-editor-wrap">
           <div id="hk-internal-notes-editor"></div>
         </div>
         <div class="hk-wizard-nav">
@@ -850,12 +820,12 @@ function hkPanelAI(m){
   return `
     <div class="hk-ai-panel">
       <div class="hk-ai-panel__log" id="hk-ai-log">
-        <div class="hk-ai-msg hk-ai-msg--bot">สวัสดีครับ ผมคือ HILLKOFFBOT ถามข้อมูลของ <strong>${hkEscapeHtml(m.name)}</strong> หรือคำถามทั่วไปเกี่ยวกับเครื่องชงกาแฟได้เลยครับ</div>
+        <div class="hk-ai-msg hk-ai-msg--bot">สวัสดีครับ ผมคือ HILLKOFFBOT ถามข้อมูลของ <strong>${hkEscapeHtml(m.name)}</strong> ได้เลยครับ เช่น Pump, Boiler, อะไหล่ หรือเอกสารต่าง ๆ</div>
       </div>
       <div class="hk-ai-panel__suggestions">
         <button class="hk-ai-suggestion" data-q="ใช้ Pump อะไร">ใช้ Pump อะไร</button>
         <button class="hk-ai-suggestion" data-q="ใช้ Boiler กี่ลิตร">ใช้ Boiler กี่ลิตร</button>
-        <button class="hk-ai-suggestion" data-q="เหมาะกับร้านแบบไหน">เหมาะกับร้านแบบไหน</button>
+        <button class="hk-ai-suggestion" data-q="ขอดู Wiring Diagram">ขอดู Wiring Diagram</button>
       </div>
       <div class="hk-ai-panel__input">
         <input type="text" id="hk-ai-input" placeholder="พิมพ์คำถามเกี่ยวกับ ${hkEscapeHtml(m.name)}...">
@@ -901,29 +871,13 @@ function hkWireAIPanel(machine){
   const send = document.getElementById('hk-ai-send');
   if(!log || !input || !send) return;
 
-  const history = [];
-
-  async function ask(text){
-    const q = text.trim();
-    if(!q) return;
-    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--user">${hkEscapeHtml(q)}</div>`);
+  function ask(text){
+    if(!text.trim()) return;
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--user">${hkEscapeHtml(text)}</div>`);
+    const answer = hkAskBot(text, machine);
+    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot">${hkEscapeHtml(answer)}</div>`);
+    log.scrollTop = log.scrollHeight;
     input.value = '';
-    input.disabled = true;
-    send.disabled = true;
-    const typingId = 'hk-ai-typing-' + Date.now();
-    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot" id="${typingId}">กำลังพิมพ์...</div>`);
-    log.scrollTop = log.scrollHeight;
-
-    const result = await hkAskBotAI(q, machine, history);
-    document.getElementById(typingId)?.remove();
-    log.insertAdjacentHTML('beforeend', `<div class="hk-ai-msg hk-ai-msg--bot">${hkEscapeHtml(result.text)}</div>`);
-    log.scrollTop = log.scrollHeight;
-    if(!result.ok) hkToast('AI ไม่พร้อมใช้งานตอนนี้ ใช้คำตอบสำรองจากฐานข้อมูลแทน');
-
-    history.push({ role: 'user', text: q }, { role: 'bot', text: result.text });
-    input.disabled = false;
-    send.disabled = false;
-    input.focus();
   }
   send.addEventListener('click', () => ask(input.value));
   input.addEventListener('keydown', (e) => { if(e.key === 'Enter') ask(input.value); });
