@@ -7,7 +7,7 @@
   background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-lg);
   padding: 32px 28px; box-shadow: var(--hk-shadow-2);
 }
-.hk-login-title{ font-family: var(--hk-font-display); font-size: 22px; font-weight:700; text-align:center; margin-bottom:4px; }
+.hk-login-title{ font-family: var(--hk-font-display); font-size: clamp(19px, 5vw, 22px); font-weight:700; text-align:center; margin-bottom:4px; }
 .hk-login-sub{ text-align:center; font-size:13px; color: var(--hk-text-dim); margin-bottom:22px; }
 .hk-login-error{
   background: rgba(229,72,77,.12); border:1px solid rgba(229,72,77,.35); color: var(--hk-danger);

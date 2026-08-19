@@ -226,7 +226,18 @@ code, .mono{ font-family: var(--hk-font-mono); }
 .hk-breadcrumb a:hover{ color: var(--hk-gold); }
 .hk-breadcrumb__sep{ opacity:.5; }
 
+/* ---------- Touch targets (mobile / tablet) ---------- */
+@media (hover: none) and (pointer: coarse){
+  .hk-btn{ min-height: 44px; }
+  .hk-navitem{ min-height: 44px; }
+  .hk-search{ min-height: 44px; }
+  .hk-sidebar__toggle{ width:44px; height:44px; }
+}
+
 /* ---------- Responsive ---------- */
+@media (max-width: 1180px){
+  :root{ --hk-sidebar-w: 224px; }
+}
 @media (max-width: 980px){
   .hk-app{ grid-template-columns: 1fr; }
   .hk-sidebar{

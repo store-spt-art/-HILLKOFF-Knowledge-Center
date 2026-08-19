@@ -124,7 +124,19 @@
 }
 .hk-success__actions{ display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
 
+/* ---------- Touch targets (mobile / tablet) ---------- */
+@media (hover: none) and (pointer: coarse){
+  .hk-input, .hk-textarea, .hk-select{ min-height: 44px; }
+  .hk-catoption{ min-height: 44px; }
+  .hk-parts-row input{ min-height: 44px; }
+  .hk-step__dot{ width: 34px; height: 34px; }
+}
+
 /* ---------- Responsive ---------- */
+@media (max-width: 640px){
+  .hk-wizard-nav{ flex-direction: column-reverse; }
+  .hk-wizard-nav .hk-btn{ width: 100%; }
+}
 @media (max-width: 480px){
   .hk-catpicker{ grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); gap: 8px; }
   .hk-spec-grid{ grid-template-columns: 1fr; }

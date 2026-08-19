@@ -12,7 +12,7 @@
 .hk-dheader__media svg{ width:46px; height:46px; opacity:.5; }
 .hk-dheader__body{ flex:1; min-width:220px; }
 .hk-dheader__top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
-.hk-dheader__name{ font-family: var(--hk-font-display); font-size: 24px; font-weight:700; margin:0; }
+.hk-dheader__name{ font-family: var(--hk-font-display); font-size: clamp(19px, 4.2vw, 24px); font-weight:700; margin:0; }
 .hk-dheader__meta{
   display:flex; flex-wrap:wrap; gap: 18px; margin-top: 14px;
 }
@@ -262,6 +262,21 @@
 }
 
 @media (max-width: 420px){
-  .hk-dheader__name{ font-size: 20px; }
   .hk-imggroup__grid{ grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); }
+}
+
+/* ---------- Tablet (641px–980px) ---------- */
+@media (min-width: 641px) and (max-width: 980px){
+  .hk-approval-grid{ grid-template-columns: repeat(2, 1fr); }
+  .hk-ai-panel{ height: 60vh; min-height: 360px; max-height: 560px; }
+}
+
+/* ---------- Touch targets (mobile / tablet) ---------- */
+@media (hover: none) and (pointer: coarse){
+  .hk-approval-dept__form input[type="text"],
+  .hk-approval-dept__form input[type="date"],
+  .hk-ai-panel__input input,
+  .hk-doc-upload__btn{ min-height: 44px; }
+  .hk-tab{ min-height: 44px; }
+  .hk-imgtile--add, .hk-parts-row__thumb{ min-height: 44px; }
 }
