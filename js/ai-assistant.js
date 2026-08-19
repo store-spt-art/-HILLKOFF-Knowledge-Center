@@ -64,5 +64,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   hkAuthRenderSidebarFooter();
   hkRenderAIRoot();
   await hkBootstrapMachines();
-  if(HK_LAST_LOAD_ERROR) hkToast('โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ กำลังแสดงข้อมูลตัวอย่างแทน');
+  if(HK_LAST_LOAD_ERROR) hkToast(hkLoadErrorToastMessage());
 });

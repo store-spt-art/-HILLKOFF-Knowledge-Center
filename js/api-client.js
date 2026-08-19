@@ -15,14 +15,40 @@
    triggering one — Code.gs still JSON.parses the body normally.
    ========================================================= */
 
-const HK_API_URL = 'https://script.google.com/macros/s/AKfycbynVa46qwhhg0YNgZ6PkvvHXRfum0hMroge31V-qutLV9TwgZC-kqXVj2W2F_vnWfX8/exec';
+const HK_API_URL = 'https://script.google.com/macros/s/AKfycbwuobmuFTdaBMUf9vvYobxiStz666UZJob5JE-q77pmehB6ygdE5Mq0hdKA24ctGcKb/exec';
+
+// Apps Script Web Apps can occasionally hang or blip on a single request
+// (cold start, transient network issue). fetchJson wraps a request with
+// a timeout (so a hung request fails fast instead of spinning forever)
+// and an optional retry — only used for GET reads (list/get), which are
+// safe to retry since they don't change anything. POST actions are never
+// auto-retried here, since retrying a write blindly risks creating a
+// duplicate machine/part/etc. if the first attempt actually succeeded
+// server-side but the response itself got lost.
+async function hkFetchJson(url, options, retries){
+  const attempts = (retries || 0) + 1;
+  let lastErr;
+  for(let i = 0; i < attempts; i++){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try{
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      return await res.json();
+    }catch(err){
+      lastErr = err;
+      if(i < attempts - 1) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr;
+}
 
 // Every request (GET or POST) carries the session token from auth.js.
 // If the backend ever comes back with {error:'unauthorized'} — missing
 // token, forged token, expired token, or a disabled account — bounce to
 // the login page immediately instead of making every caller check for it.
-async function hkApiHandleResponse(res){
-  const data = await res.json();
+function hkApiHandleResponse(data){
   if(data && data.error === 'unauthorized'){
     hkAuthClearSession();
     hkAuthRedirectToLogin();
@@ -31,22 +57,22 @@ async function hkApiHandleResponse(res){
 }
 
 async function hkApiListMachines(){
-  const res = await fetch(`${HK_API_URL}?action=list&token=${encodeURIComponent(hkAuthGetToken() || '')}`);
-  return hkApiHandleResponse(res);
+  const data = await hkFetchJson(`${HK_API_URL}?action=list&token=${encodeURIComponent(hkAuthGetToken() || '')}`, {}, 1);
+  return hkApiHandleResponse(data);
 }
 
 async function hkApiGetMachine(id){
-  const res = await fetch(`${HK_API_URL}?action=get&id=${encodeURIComponent(id)}&token=${encodeURIComponent(hkAuthGetToken() || '')}`);
-  return hkApiHandleResponse(res);
+  const data = await hkFetchJson(`${HK_API_URL}?action=get&id=${encodeURIComponent(id)}&token=${encodeURIComponent(hkAuthGetToken() || '')}`, {}, 1);
+  return hkApiHandleResponse(data);
 }
 
 async function hkApiPost(action, payload){
-  const res = await fetch(HK_API_URL, {
+  const data = await hkFetchJson(HK_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action, payload, token: hkAuthGetToken() }),
-  });
-  return hkApiHandleResponse(res);
+  }, 0);
+  return hkApiHandleResponse(data);
 }
 
 // Login is the one call that must NOT carry a token (there isn't one

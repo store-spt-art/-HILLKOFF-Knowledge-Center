@@ -373,6 +373,38 @@ built in beyond the existing login requirement (`requireAuth()` still
 gates `aiChat` same as every other action) — add one if usage needs
 capping later.
 
+## Performance — why loads were slow and what changed
+
+Two backend issues were the main cause of slow/unreliable page loads:
+
+1. **`getSheet()` re-opened the whole Spreadsheet by ID on every call.**
+   `listMachines()` alone called it 6+ times per request (once per tab) —
+   `SpreadsheetApp.openById()` is the expensive part, not the sheet read
+   itself. Fixed by caching the opened Spreadsheet object per execution
+   (`getSpreadsheet()`) — now one open per request instead of six.
+2. **No caching at all — every single page load re-read every tab.**
+   `listMachines()` now caches its assembled JSON in `CacheService` for
+   30 seconds (`HK_LIST_CACHE_TTL_SECONDS`). Repeat loads within that
+   window return almost instantly without touching the Sheet. Every
+   write action (`doPost`, anything except `uploadFile`/`aiChat`) clears
+   this cache immediately via `invalidateMachinesCache()`, so edits show
+   up on the very next load rather than sitting stale for up to 30s.
+
+Frontend changes to match:
+- `js/api-client.js` — GET reads (`list`/`get`) now have a 15s timeout
+  and one automatic retry on failure, since a hung/blipped request used
+  to just wait forever or fail permanently on the first hiccup. POST
+  writes get the same timeout but are **never** auto-retried — retrying
+  a write blindly risks creating a duplicate row if the first attempt
+  actually succeeded server-side but the response itself got lost (this
+  really happens with Apps Script's redirect-based response delivery).
+- `js/machines-data.js` — `hkBootstrapMachines()` now saves every
+  successful machine list to `sessionStorage`. If a later load fails, it
+  falls back to that (real, if possibly a little stale) data instead of
+  jumping straight to the generic `HK_MACHINES_SEED` demo data — seed
+  data is now only used when there's no real data cached yet at all
+  (e.g. the very first load of a fresh browser tab).
+
 ## Internal Structure access gate — currently removed
 
 An earlier version of this project gated the Internal Structure tab behind

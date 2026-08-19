@@ -262,6 +262,13 @@ const HK_MACHINES_SEED = [
    so the UI still has something to show instead of breaking. */
 let HK_MACHINES_CACHE = [];
 let HK_LAST_LOAD_ERROR = null;
+let HK_LAST_LOAD_USED_CACHE = false;
+
+// sessionStorage key holding the last successful real fetch — used as a
+// fallback if a later fetch fails, so a transient blip shows slightly
+// stale real data instead of jumping all the way to generic demo seed
+// data (which used to be the only fallback).
+const HK_MACHINES_CACHE_KEY = 'hk_machines_cache_v1';
 
 async function hkBootstrapMachines(){
   try{
@@ -269,12 +276,32 @@ async function hkBootstrapMachines(){
     if(!Array.isArray(data)) throw new Error(data && data.error ? data.error : 'Unexpected response shape');
     HK_MACHINES_CACHE = data;
     HK_LAST_LOAD_ERROR = null;
+    HK_LAST_LOAD_USED_CACHE = false;
+    try{ sessionStorage.setItem(HK_MACHINES_CACHE_KEY, JSON.stringify(data)); }catch(e){ /* storage full/unavailable — not worth failing over */ }
   }catch(err){
-    console.error('Failed to load machines from the backend, showing local seed data instead:', err);
-    HK_MACHINES_CACHE = HK_MACHINES_SEED;
+    let lastGood = null;
+    try{ lastGood = JSON.parse(sessionStorage.getItem(HK_MACHINES_CACHE_KEY) || 'null'); }catch(e){ /* ignore corrupt cache */ }
+    if(Array.isArray(lastGood) && lastGood.length){
+      HK_MACHINES_CACHE = lastGood;
+      HK_LAST_LOAD_USED_CACHE = true;
+      console.error('Failed to load machines from the backend, falling back to the last successful load this session:', err);
+    }else{
+      HK_MACHINES_CACHE = HK_MACHINES_SEED;
+      HK_LAST_LOAD_USED_CACHE = false;
+      console.error('Failed to load machines from the backend, falling back to seed data:', err);
+    }
     HK_LAST_LOAD_ERROR = err;
   }
   return HK_MACHINES_CACHE;
+}
+
+// Shared toast copy for the 4 pages that show a fallback warning — says
+// something more accurate than "showing demo data" when we actually
+// managed to fall back to real (if slightly stale) data instead.
+function hkLoadErrorToastMessage(){
+  return HK_LAST_LOAD_USED_CACHE
+    ? 'โหลดข้อมูลล่าสุดไม่สำเร็จ กำลังแสดงข้อมูลที่โหลดไว้ล่าสุดแทน'
+    : 'โหลดข้อมูลจากฐานข้อมูลไม่สำเร็จ กำลังแสดงข้อมูลตัวอย่างแทน';
 }
 
 /* ---------- Public query API ---------- */
@@ -550,6 +577,7 @@ function getPartByIdWithUsage(partId, machineId){
 }
 
 window.hkBootstrapMachines = hkBootstrapMachines;
+window.hkLoadErrorToastMessage = hkLoadErrorToastMessage;
 window.HK_CATEGORIES = HK_CATEGORIES;
 window.HK_SPEC_FIELDS = HK_SPEC_FIELDS;
 window.HK_INTERNAL_GROUPS = HK_INTERNAL_GROUPS;
