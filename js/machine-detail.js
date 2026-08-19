@@ -247,7 +247,7 @@ function hkPanelSpecification(m){
     <div class="hk-panel-actionbar">
       <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-edit-spec>✎ แก้ไข Specification</button>
     </div>
-    <table class="hk-spec-table"><tbody>${rows}</tbody></table>`;
+    <div class="hk-table-scroll"><table class="hk-spec-table"><tbody>${rows}</tbody></table></div>`;
 }
 
 function hkSpecEditFormHtml(m){
@@ -257,7 +257,7 @@ function hkSpecEditFormHtml(m){
       <td><input class="hk-input" style="font-family:var(--hk-font-mono);" data-spec-field="${f.key}" value="${hkEscapeHtml(m.specification?.[f.key] || '')}"></td>
     </tr>`).join('');
   return `
-    <table class="hk-spec-table"><tbody>${rows}</tbody></table>
+    <div class="hk-table-scroll"><table class="hk-spec-table"><tbody>${rows}</tbody></table></div>
     <div class="hk-wizard-nav">
       <button type="button" class="hk-btn hk-btn--ghost" data-edit-spec-cancel>ยกเลิก</button>
       <button type="button" class="hk-btn hk-btn--primary" data-edit-spec-save>บันทึก</button>
@@ -562,7 +562,7 @@ function hkApprovalMdHtml(m){
         <input type="text" placeholder="ชื่อผู้พิจารณา" data-approval-md-name>
         <input type="date" data-approval-md-date>
         <textarea placeholder="ข้อความการประเมิน / ความเห็น (จำเป็นถ้าเลือกไม่อนุมัติ)" data-approval-md-comment rows="2"></textarea>
-        <div style="display:flex; gap:8px; width:100%;">
+        <div class="hk-approval-md__actions">
           <button type="button" class="hk-btn hk-btn--danger hk-btn--sm" data-approval-md-decision="rejected">✕ ไม่อนุมัติ</button>
           <button type="button" class="hk-btn hk-btn--primary hk-btn--sm" data-approval-md-decision="approved" ${ready ? '' : 'disabled'}>อนุมัตินำเข้าขาย</button>
         </div>
@@ -686,7 +686,7 @@ function hkPanelParts(m){
       </td>
     </tr>`).join('');
   const table = (m.parts && m.parts.length)
-    ? `<table class="hk-parts-table"><thead><tr><th>รูป</th><th>ชื่ออะไหล่</th><th>ยี่ห้อ</th><th>รุ่น</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    ? `<div class="hk-table-scroll"><table class="hk-parts-table"><thead><tr><th>รูป</th><th>ชื่ออะไหล่</th><th>ยี่ห้อ</th><th>รุ่น</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
     : `<div class="hk-empty"><div class="hk-empty__icon">🔧</div><h3>ยังไม่มีรายการอะไหล่</h3></div>`;
   return `
     <div class="hk-panel-actionbar">

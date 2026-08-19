@@ -31,9 +31,10 @@
 }
 
 *, *::before, *::after{ box-sizing: border-box; }
-html{ color-scheme: dark; }
+html{ color-scheme: dark; overflow-x: hidden; }
 body{
   margin:0;
+  overflow-x: hidden;
   background: var(--hk-bg);
   color: var(--hk-text);
   font-family: var(--hk-font-body);

@@ -107,14 +107,14 @@
 .hk-review-card{ background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-lg); padding: 20px; margin-bottom: 20px; }
 .hk-review-card h4{ margin-bottom:12px; font-size:14px; color: var(--hk-gold); }
 .hk-review-id{
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap: wrap;
   background: rgba(242,183,5,.1); border:1px solid rgba(242,183,5,.3); border-radius: var(--hk-radius-md);
   padding: 14px 18px; margin-bottom: 20px;
 }
 .hk-review-id__code{ font-family: var(--hk-font-mono); font-size: 20px; font-weight:700; color: var(--hk-gold); }
 
 /* ---------- Nav buttons ---------- */
-.hk-wizard-nav{ display:flex; justify-content: space-between; gap:12px; margin-top: 28px; }
+.hk-wizard-nav{ display:flex; justify-content: space-between; gap:12px; margin-top: 28px; flex-wrap: wrap; }
 
 /* ---------- Success screen ---------- */
 .hk-success{ text-align:center; padding: 60px 20px; max-width: 480px; margin: 0 auto; }
@@ -123,3 +123,12 @@
   display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; color: var(--hk-success); font-size:32px;
 }
 .hk-success__actions{ display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px){
+  .hk-catpicker{ grid-template-columns: repeat(auto-fill, minmax(100px,1fr)); gap: 8px; }
+  .hk-spec-grid{ grid-template-columns: 1fr; }
+  .hk-doc-upload-grid{ grid-template-columns: 1fr; }
+  .hk-step__label{ display: none; }
+  .hk-review-id__code{ font-size: 17px; }
+}
