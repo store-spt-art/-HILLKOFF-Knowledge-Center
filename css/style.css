@@ -65,6 +65,11 @@ code, .mono{ font-family: var(--hk-font-mono); }
   grid-template-columns: var(--hk-sidebar-w) 1fr;
   min-height: 100vh;
 }
+/* Grid/flex items default to min-width:auto, which stops them from
+   shrinking below their content's natural (unwrapped) width. That is
+   what was pushing the whole page wider than the phone's viewport.
+   Forcing min-width:0 lets every column/row actually shrink and wrap. */
+.hk-app > *{ min-width: 0; }
 
 /* ---------- Sidebar ---------- */
 .hk-sidebar{
@@ -131,6 +136,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
   display:flex; align-items:center; gap:16px;
   padding: 0 24px;
   position: sticky; top:0; z-index: 30;
+  min-width: 0;
 }
 .hk-search{
   flex:1; max-width: 460px;
@@ -155,7 +161,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
 }
 
 /* ---------- Content ---------- */
-.hk-content{ padding: 28px 32px 60px; max-width: 1320px; }
+.hk-content{ padding: 28px 32px 60px; max-width: 1320px; min-width: 0; }
 .hk-section-head{
   display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
   margin-bottom: 20px; flex-wrap: wrap;
@@ -222,7 +228,8 @@ code, .mono{ font-family: var(--hk-font-mono); }
 .hk-toast__dot{ width:8px; height:8px; border-radius:50%; background: var(--hk-success); flex-shrink:0; }
 
 /* ---------- Breadcrumb ---------- */
-.hk-breadcrumb{ display:flex; align-items:center; gap:8px; font-size:13px; color: var(--hk-text-dim); margin-bottom:18px; flex-wrap:wrap; }
+.hk-breadcrumb{ display:flex; align-items:center; gap:8px; font-size:13px; color: var(--hk-text-dim); margin-bottom:18px; flex-wrap:wrap; min-width: 0; }
+.hk-breadcrumb a{ overflow-wrap: anywhere; }
 .hk-breadcrumb a:hover{ color: var(--hk-gold); }
 .hk-breadcrumb__sep{ opacity:.5; }
 
@@ -252,6 +259,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
 @media (max-width: 560px){
   .hk-search{ max-width: none; }
   .hk-search__kbd{ display:none; }
+  .hk-breadcrumb{ font-size: 12px; gap: 6px; }
 }
 
 .hk-backdrop{
