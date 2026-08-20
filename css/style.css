@@ -31,11 +31,12 @@
 }
 
 *, *::before, *::after{ box-sizing: border-box; }
+
+/* คืนค่าการ Scroll ให้ Document ปกติเพื่อป้องกันปัญหาหน้าเว็บหดสเกล/เลื่อนไม่ได้ */
 html, body{
-  height: 100vh;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  overflow: hidden;
   background: var(--hk-bg);
   color: var(--hk-text);
   font-family: var(--hk-font-body);
@@ -61,19 +62,20 @@ code, .mono{ font-family: var(--hk-font-mono); }
   *{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
 
-/* ---------- App shell ---------- */
+/* ---------- App Layout Structure ---------- */
 .hk-app{
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  width: 100%;
 }
 
-/* ---------- Sidebar (ล็อกนิ่งอยู่กับที่ 100% ไม่ลอย ไม่เลื่อน) ---------- */
+/* ---------- Sidebar (Sticky Sidebar Layout มาตรฐานที่เสถียรที่สุด) ---------- */
 .hk-sidebar{
   width: var(--hk-sidebar-w);
   min-width: var(--hk-sidebar-w);
   height: 100vh;
+  position: sticky;
+  top: 0;
   background: var(--hk-surface);
   border-right: 1px solid var(--hk-border);
   padding: 20px 14px;
@@ -127,14 +129,12 @@ code, .mono{ font-family: var(--hk-font-mono); }
   align-items:center; justify-content:center; cursor:pointer;
 }
 
-/* ---------- Main Content Container (ส่วนที่จะ Scroll แทน) ---------- */
+/* ---------- Main Content Container (ขยายเต็มพื้นที่ที่เหลือและปรับขนาดตาม Viewport) ---------- */
 .hk-main{
-  flex: 1;
-  height: 100vh;
-  overflow-y: auto;
+  flex: 1 1 0%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 /* ---------- Navbar ---------- */
@@ -146,8 +146,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
   display:flex; align-items:center; gap:16px;
   padding: 0 24px;
   position: sticky; top:0; z-index: 30;
-  min-width: 0;
-  flex-shrink: 0;
+  width: 100%;
 }
 .hk-search{
   flex:1; max-width: 460px;
@@ -172,7 +171,12 @@ code, .mono{ font-family: var(--hk-font-mono); }
 }
 
 /* ---------- Content ---------- */
-.hk-content{ padding: 28px 32px 60px; max-width: 1320px; min-width: 0; }
+.hk-content{ 
+  padding: 28px 32px 60px; 
+  width: 100%;
+  max-width: 100%; 
+  min-width: 0; 
+}
 .hk-section-head{
   display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
   margin-bottom: 20px; flex-wrap: wrap;
@@ -244,15 +248,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
 .hk-breadcrumb a:hover{ color: var(--hk-gold); }
 .hk-breadcrumb__sep{ opacity:.5; }
 
-/* ---------- Touch targets (mobile / tablet) ---------- */
-@media (hover: none) and (pointer: coarse){
-  .hk-btn{ min-height: 44px; }
-  .hk-navitem{ min-height: 44px; }
-  .hk-search{ min-height: 44px; }
-  .hk-sidebar__toggle{ width:44px; height:44px; }
-}
-
-/* ---------- Responsive ---------- */
+/* ---------- Responsive Standard Boundaries ---------- */
 @media (max-width: 1180px){
   :root{ --hk-sidebar-w: 224px; }
 }
