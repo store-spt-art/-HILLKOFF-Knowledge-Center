@@ -56,7 +56,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
 }
 
 @media (prefers-reduced-motion: reduce){
-  *{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; transition-duration: .001ms !important; }
+  *{ animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
 
 /* ---------- App shell ---------- */
@@ -66,8 +66,7 @@ code, .mono{ font-family: var(--hk-font-mono); }
   min-height: 100vh;
 }
 /* Grid/flex items default to min-width:auto, which stops them from
-   shrinking below their content's natural (unwrapped) width. That is
-   what was pushing the whole page wider than the phone's viewport.
+   shrinking below their content's natural (unwrapped) width.
    Forcing min-width:0 lets every column/row actually shrink and wrap. */
 .hk-app > *{ min-width: 0; }
 
@@ -76,13 +75,11 @@ code, .mono{ font-family: var(--hk-font-mono); }
   background: var(--hk-surface);
   border-right: 1px solid var(--hk-border);
   padding: 20px 14px;
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  bottom: 0;
-  width: var(--hk-sidebar-w);
+  height: 100vh;
   overflow-y: auto;
-  display:flex;
+  display: flex;
   flex-direction: column;
   gap: 22px;
   z-index: 40;
@@ -127,6 +124,13 @@ code, .mono{ font-family: var(--hk-font-mono); }
   width:38px; height:38px; border-radius: var(--hk-radius-sm);
   background: var(--hk-surface); border:1px solid var(--hk-border); color: var(--hk-text);
   align-items:center; justify-content:center; cursor:pointer;
+}
+
+/* ---------- Main Layout Adjustment for Sticky Sidebar ---------- */
+.hk-main{
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---------- Navbar ---------- */
