@@ -15,7 +15,7 @@
    triggering one — Code.gs still JSON.parses the body normally.
    ========================================================= */
 
-const HK_API_URL = 'https://script.google.com/macros/s/AKfycbwuobmuFTdaBMUf9vvYobxiStz666UZJob5JE-q77pmehB6ygdE5Mq0hdKA24ctGcKb/exec';
+const HK_API_URL = 'https://script.google.com/macros/s/AKfycbxasc7hDrcF5VFYR6D9E5Ac5LaWDeBKFdbrTCU3QpNC5WjTb-CrKnws4OvrkgVlyHiX/exec';
 
 // Apps Script Web Apps can occasionally hang or blip on a single request
 // (cold start, transient network issue). fetchJson wraps a request with
@@ -136,6 +136,33 @@ async function hkApiDeleteDocument(payload){
 // Gemini has conversational context (Code.gs caps this to the last 10).
 async function hkApiAiChat(message, history){
   return hkApiPost('aiChat', { message, history });
+}
+
+// --- NFC Public Machine Profile ---
+// getNfcSettings/updateNfcSettings/regenerateNfcToken/updateImageNfcVisibility
+// are all authenticated (admin-only, used by the NFC tab on a machine's
+// detail page). getNfcProfile is the one deliberately PUBLIC call — no
+// token attached, since a person scanning a tag has no login session.
+async function hkApiGetNfcSettings(machineId){
+  const data = await hkFetchJson(`${HK_API_URL}?action=nfcSettings&id=${encodeURIComponent(machineId)}&token=${encodeURIComponent(hkAuthGetToken() || '')}`, {}, 1);
+  return hkApiHandleResponse(data);
+}
+async function hkApiUpdateNfcSettings(payload){
+  return hkApiPost('updateNfcSettings', payload);
+}
+async function hkApiRegenerateNfcToken(machineId){
+  return hkApiPost('regenerateNfcToken', { machineId });
+}
+async function hkApiUpdateImageNfcVisibility(payload){
+  return hkApiPost('updateImageNfcVisibility', payload);
+}
+// Public — intentionally does not go through hkApiPost/hkFetchJson's
+// token attachment, and does not redirect to login on {error:'unauthorized'}
+// (there is no such error for this action, but keep this call independent
+// of the authenticated-request plumbing on principle).
+async function hkApiGetNfcProfile(token){
+  const res = await fetch(`${HK_API_URL}?action=nfcProfile&token=${encodeURIComponent(token)}`);
+  return res.json();
 }
 
 // file: a File object from an <input type="file">

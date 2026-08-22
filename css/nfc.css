@@ -1,0 +1,68 @@
+.hk-nfc-body{
+  min-height: 100vh; display:flex; justify-content:center;
+  background: var(--hk-bg);
+  padding: 24px 16px;
+}
+.hk-nfc-loading-screen{ display:flex; align-items:center; justify-content:center; width:100%; min-height: 60vh; }
+.hk-nfc-spinner{
+  width: 36px; height:36px; border-radius:50%; border: 3px solid var(--hk-border); border-top-color: var(--hk-gold);
+  animation: hk-nfc-spin .8s linear infinite;
+}
+@keyframes hk-nfc-spin{ to{ transform: rotate(360deg); } }
+
+.hk-nfc-card{
+  width:100%; max-width: 480px; background: var(--hk-surface); border:1px solid var(--hk-border);
+  border-radius: var(--hk-radius-lg); overflow:hidden; box-shadow: var(--hk-shadow-2);
+  align-self: flex-start;
+}
+.hk-nfc-card--unavailable{ text-align:center; padding: 40px 28px; }
+.hk-nfc-brand{ display:flex; align-items:center; gap:10px; padding: 18px 22px; border-bottom:1px solid var(--hk-border); }
+.hk-nfc-brand__name{ font-family: var(--hk-font-display); font-weight:700; font-size:15px; }
+.hk-nfc-brand__name span{ display:block; font-size:11px; font-weight:500; color: var(--hk-text-dim); }
+.hk-nfc-card--unavailable .hk-nfc-brand{ justify-content:center; border-bottom:none; }
+
+.hk-nfc-cover{ width:100%; aspect-ratio: 4/3; background: var(--hk-surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.hk-nfc-cover img{ width:100%; height:100%; object-fit: contain; }
+.hk-nfc-cover--empty{ font-size: 48px; opacity:.4; }
+
+.hk-nfc-body-content{ padding: 22px; }
+.hk-nfc-title{ font-family: var(--hk-font-display); font-size: 22px; font-weight:700; margin: 10px 0 4px; }
+.hk-nfc-meta{ display:grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin: 16px 0 22px; }
+.hk-nfc-meta__label{ font-size:11px; color: var(--hk-text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
+.hk-nfc-meta__value{ font-size:14px; font-weight:600; }
+
+.hk-nfc-section{ margin-bottom: 24px; padding-top: 20px; border-top: 1px solid var(--hk-border); }
+.hk-nfc-section:first-of-type{ border-top:none; padding-top:0; }
+.hk-nfc-section__title{ font-family: var(--hk-font-display); font-size:13px; font-weight:700; color: var(--hk-gold); text-transform:uppercase; letter-spacing:.06em; margin-bottom: 12px; }
+
+.hk-nfc-description{ font-size:14px; color: var(--hk-text); line-height: 1.6; }
+.hk-nfc-description p{ margin: 0 0 8px; color: var(--hk-text); }
+.hk-nfc-description ul{ list-style: disc; padding-left: 20px; margin: 0 0 10px; }
+.hk-nfc-description ol{ list-style: decimal; padding-left: 20px; margin: 0 0 10px; }
+.hk-nfc-description li{ margin-bottom: 4px; }
+.hk-nfc-description h1, .hk-nfc-description h2, .hk-nfc-description h3{ font-size:15px; margin: 12px 0 6px; color: var(--hk-text); font-family: var(--hk-font-display); }
+.hk-nfc-description strong{ color: var(--hk-text); }
+
+.hk-nfc-spec-table{ width:100%; border-collapse: collapse; }
+.hk-nfc-spec-table tr:not(:last-child) td{ border-bottom: 1px solid var(--hk-border); }
+.hk-nfc-spec-table td{ padding: 9px 0; font-size:13.5px; }
+.hk-nfc-spec-table td:first-child{ color: var(--hk-text-dim); }
+.hk-nfc-spec-table td:last-child{ font-weight:600; font-family: var(--hk-font-mono); text-align:right; }
+
+.hk-nfc-gallery-group{ margin-bottom: 14px; }
+.hk-nfc-gallery-group:last-child{ margin-bottom:0; }
+.hk-nfc-gallery-group__label{ font-size:11px; font-weight:700; color: var(--hk-text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+.hk-nfc-gallery-group__grid{ display:grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.hk-nfc-gallery-tile{ aspect-ratio:1; border-radius: var(--hk-radius-md); overflow:hidden; background: var(--hk-surface-2); }
+.hk-nfc-gallery-tile img{ width:100%; height:100%; object-fit:cover; }
+
+.hk-nfc-unavailable__icon{ font-size: 40px; margin-bottom: 12px; }
+.hk-nfc-unavailable__title{ font-family: var(--hk-font-display); font-size:19px; margin-bottom:8px; }
+.hk-nfc-unavailable__text{ color: var(--hk-text-dim); font-size:13.5px; margin:0; }
+
+.hk-nfc-footer{ text-align:center; font-size:11px; color: var(--hk-text-dim); margin: 8px 0 0; }
+
+@media (max-width: 420px){
+  .hk-nfc-body{ padding: 0; }
+  .hk-nfc-card{ max-width: 100%; border-radius:0; border-left:none; border-right:none; min-height: 100vh; }
+}

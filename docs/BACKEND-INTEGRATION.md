@@ -405,6 +405,89 @@ Frontend changes to match:
   data is now only used when there's no real data cached yet at all
   (e.g. the very first load of a fresh browser tab).
 
+## NFC Public Machine Profile
+
+A machine can be given a public, no-login page reachable by scanning an
+NFC tag stuck on the machine itself. Only three sections are ever
+exposed — **Overview, Specification, and Gallery** — and each is
+individually toggle-able per machine from a new **NFC** tab on that
+machine's detail page. Internal Structure, Parts List, Documents,
+Approvals, and InternalNotes are never reachable through this route,
+regardless of any setting.
+
+**Design principle: the tag stores a URL, not data.** The NFC tag itself
+only ever holds `https://.../html/nfc.html?token=<random>` — never the
+MachineID or BCCode directly, and never a copy of the machine's data. On
+scan, the page looks the token up against the Sheet and always shows
+whatever is currently there. Editing the machine in the normal admin UI
+updates what the NFC page shows immediately — no need to ever rewrite
+the physical tag, unless you deliberately regenerate the token.
+
+**Why a random token instead of `/nfc/MC-ES-0481`:** a MachineID/BCCode
+is guessable (sequential, human-chosen) — someone could enumerate other
+machines' public pages without ever having scanned their tags. A random
+14-character token (`generateNfcToken()` in `Code.gs`) isn't.
+
+**New `Machine` tab columns:**
+`NfcStatus` (`not_registered` / `active` / `disabled`), `NfcToken`,
+`NfcShowOverview` (`TRUE`/`FALSE`), `NfcShowSpecification`
+(`TRUE`/`FALSE`), `NfcHiddenSpecFields` (comma-separated spec keys hidden
+from the public page, e.g. `pid,waterTank`).
+
+**New `Images` tab column:** `ShowOnNfc` (`TRUE`/`FALSE`) — only ever
+consulted for `Section = "Gallery"` rows. `Section = "Internal"` rows are
+never included in an NFC response no matter what this column says; the
+filter in `getNfcProfile()` only looks at Gallery rows in the first
+place. New images default to `FALSE` (opt-in only, per the design's "don't
+auto-expose new photos" principle) — an admin has to explicitly check
+each photo they want public in the NFC tab.
+
+**New Code.gs actions:**
+
+| Action | Auth | Payload | What it does |
+|---|---|---|---|
+| `nfcProfile` (GET) | **None — public** | `token` | The one route a scanned tag hits. Returns `{ok:false, status:'not_found'\|'unavailable'}` for a bad/disabled token instead of an error, so the frontend can show a friendly "Machine Unavailable" card instead of a raw failure. |
+| `nfcSettings` (GET) | Authenticated | `id` (machineId) | Powers the NFC tab's UI — current status/token/toggles plus the Gallery images **with** their per-image `showOnNfc` flag (the main `bundleMachine()` gallery shape is just plain URL strings, so this is a separate purpose-built read). |
+| `updateNfcSettings` | Authenticated | `{ machineId, enabled, showOverview, showSpecification, hiddenSpecFields }` | Generates a token the first time NFC is enabled for a machine; toggling active/disabled afterwards never changes the token. |
+| `regenerateNfcToken` | Authenticated | `{ machineId }` | Issues a new token, immediately invalidating the old URL/tag. Use when a tag is lost, not for routine edits. |
+| `updateImageNfcVisibility` | Authenticated | `{ machineId, groupKey, url, showOnNfc }` | Toggles one specific Gallery photo's public visibility. |
+
+**Frontend pieces:**
+- `js/machine-detail.js` — new **NFC** tab: enable/disable, copy link,
+  preview button (opens the public page in a new tab), regenerate-token
+  link, Overview/Specification toggles (with a per-field checklist), and
+  a Gallery checklist grouped the same way the Gallery tab itself is.
+- `html/nfc.html` + `js/nfc.js` + `css/nfc.css` — the public page itself.
+  Deliberately does **not** load `js/auth.js` (no login gate — that's the
+  entire point) and only ever calls `hkApiGetNfcProfile()`, a plain
+  unauthenticated `fetch()` that never attaches a session token and never
+  redirects to the login page on failure (unlike every other API call in
+  this app).
+
+**Writing the actual NFC tags:** use an NDEF **URL record** (not a text
+record) containing the exact URL from the NFC tab's "คัดลอกลิงก์" button.
+Any NFC-tag-writing app (e.g. NFC Tools) can write this to a blank
+NTAG213/215/216 tag.
+
+**Optional — cleaner URLs.** This app is a static multi-page site with no
+server-side routing, so the real URL is always
+`.../html/nfc.html?token=xxxxx`. If you want the prettier
+`https://knowledge.hillkoff.com/nfc/xxxxx` form from the original design
+doc, add a rewrite rule in `vercel.json` (if hosted on Vercel):
+```json
+{ "rewrites": [{ "source": "/nfc/:token", "destination": "/html/nfc.html?token=:token" }] }
+```
+This is optional — the `?token=` URL works exactly the same either way,
+just less tidy to read.
+
+**Not implemented from the original design doc** (flagged so nothing
+gets assumed to exist): the separate "Technician NFC" dual-tag concept
+(one tag → public profile, a second tag → full login-gated profile), a
+dedicated `NFC Management` dashboard listing every machine's NFC status
+in one place, and a "Last Updated" timestamp on the NFC tab. All
+reasonable follow-ups if useful later — the core public/private split
+and per-field visibility system is what's built now.
+
 ## Internal Structure access gate — currently removed
 
 An earlier version of this project gated the Internal Structure tab behind
@@ -430,4 +513,8 @@ adapt from there.
 - [ ] Get a Gemini API key and add it as the `GEMINI_API_KEY` script property
       (see "HILLKOFFBOT AI (Gemini)" above) so the AI assistant works —
       it still works without this, just falls back to the old keyword bot
+- [ ] Add `NfcStatus` / `NfcToken` / `NfcShowOverview` / `NfcShowSpecification` /
+      `NfcHiddenSpecFields` headers to the `Machine` tab, and a `ShowOnNfc`
+      header to the `Images` tab (see "NFC Public Machine Profile" above) —
+      the NFC tab on a machine's detail page won't work without these
 - [ ] Set up AppSheet — see `docs/APPSHEET-DESIGN.md`

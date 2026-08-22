@@ -2,7 +2,7 @@
 .hk-dheader{
   display:flex; gap: 22px; padding: 22px; margin-bottom: 22px;
   background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-lg);
-  flex-wrap: wrap; min-width: 0;
+  flex-wrap: wrap;
 }
 .hk-dheader__media{
   width: 140px; height: 140px; border-radius: var(--hk-radius-md); background: var(--hk-surface-2);
@@ -11,8 +11,8 @@
 .hk-dheader__media img{ width:100%; height:100%; object-fit:contain; }
 .hk-dheader__media svg{ width:46px; height:46px; opacity:.5; }
 .hk-dheader__body{ flex:1; min-width:220px; }
-.hk-dheader__top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; min-width: 0; }
-.hk-dheader__name{ font-family: var(--hk-font-display); font-size: clamp(19px, 4.2vw, 24px); font-weight:700; margin:0; overflow-wrap: anywhere; }
+.hk-dheader__top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+.hk-dheader__name{ font-family: var(--hk-font-display); font-size: 24px; font-weight:700; margin:0; }
 .hk-dheader__meta{
   display:flex; flex-wrap:wrap; gap: 18px; margin-top: 14px;
 }
@@ -250,7 +250,6 @@
 @media (max-width: 640px){
   .hk-dheader{ flex-direction:column; align-items:flex-start; }
   .hk-dheader__media{ width: 100%; height: 180px; }
-  .hk-dheader__body{ min-width: 0; width: 100%; }
   .hk-ai-panel{ height: 68vh !important; min-height: 320px; max-height: 520px; }
   .hk-doc-item{ flex-wrap: wrap; }
   .hk-approval-grid{ grid-template-columns: 1fr; }
@@ -263,21 +262,49 @@
 }
 
 @media (max-width: 420px){
+  .hk-dheader__name{ font-size: 20px; }
   .hk-imggroup__grid{ grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); }
 }
 
-/* ---------- Tablet (641px–980px) ---------- */
-@media (min-width: 641px) and (max-width: 980px){
-  .hk-approval-grid{ grid-template-columns: repeat(2, 1fr); }
-  .hk-ai-panel{ height: 60vh; min-height: 360px; max-height: 560px; }
+/* ---------- NFC Public Machine Profile (admin settings tab) ---------- */
+.hk-nfc-panel{ max-width: 640px; }
+.hk-nfc-panel__head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap: wrap; margin-bottom: 16px; }
+.hk-nfc-panel__actions{ display:flex; gap:8px; flex-wrap: wrap; }
+.hk-nfc-status{
+  display:inline-flex; align-items:center; gap:6px; padding: 5px 12px; border-radius:999px; font-size:12.5px; font-weight:700;
+  background: var(--hk-surface-2); color: var(--hk-text-dim); border:1px solid var(--hk-border);
 }
-
-/* ---------- Touch targets (mobile / tablet) ---------- */
-@media (hover: none) and (pointer: coarse){
-  .hk-approval-dept__form input[type="text"],
-  .hk-approval-dept__form input[type="date"],
-  .hk-ai-panel__input input,
-  .hk-doc-upload__btn{ min-height: 44px; }
-  .hk-tab{ min-height: 44px; }
-  .hk-imgtile--add, .hk-parts-row__thumb{ min-height: 44px; }
+.hk-nfc-status--active{ background: rgba(76,175,109,.15); color: var(--hk-success); border-color: rgba(76,175,109,.35); }
+.hk-nfc-status--disabled{ background: rgba(229,72,77,.12); color: var(--hk-danger); border-color: rgba(229,72,77,.3); }
+.hk-nfc-status--not-registered{ background: var(--hk-surface-2); color: var(--hk-text-dim); }
+.hk-nfc-intro{ max-width: 560px; margin: 14px 0 18px; }
+.hk-nfc-url-row{ display:flex; gap:8px; margin-bottom: 8px; }
+.hk-nfc-url-row .hk-input{ font-family: var(--hk-font-mono); font-size: 12.5px; }
+.hk-nfc-regenerate-link{
+  background:none; border:none; color: var(--hk-text-dim); font-size:12px; cursor:pointer; padding:0; margin-bottom: 22px;
+  text-decoration: underline; text-underline-offset: 2px;
 }
+.hk-nfc-regenerate-link:hover{ color: var(--hk-danger); }
+.hk-nfc-section{ margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--hk-border); }
+.hk-nfc-section:last-of-type{ border-bottom: none; }
+.hk-nfc-section__label{ font-size: 14px; margin-bottom: 10px; }
+.hk-nfc-check{ display:flex; align-items:center; gap:8px; font-size: 13.5px; cursor:pointer; }
+.hk-nfc-check--section{ font-size: 14px; }
+.hk-nfc-check input[type="checkbox"]{ width:16px; height:16px; accent-color: var(--hk-gold); flex-shrink:0; cursor:pointer; }
+.hk-nfc-spec-fields{
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px 16px;
+  margin-top: 12px; padding: 14px 16px; background: var(--hk-surface); border:1px solid var(--hk-border); border-radius: var(--hk-radius-md);
+}
+.hk-nfc-loading{ font-size: 13px; color: var(--hk-text-dim); font-style: italic; }
+.hk-nfc-gallery-group{ margin-bottom: 16px; }
+.hk-nfc-gallery-group__label{ font-size:12px; font-weight:700; color: var(--hk-text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+.hk-nfc-gallery-group__grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(90px,1fr)); gap: 10px; }
+.hk-nfc-gallery-tile{
+  position: relative; aspect-ratio: 1; border-radius: var(--hk-radius-sm); overflow:hidden; background: var(--hk-surface-2);
+  border: 2px solid var(--hk-border); cursor:pointer; display:block;
+}
+.hk-nfc-gallery-tile img{ width:100%; height:100%; object-fit:cover; }
+.hk-nfc-gallery-tile input[type="checkbox"]{
+  position:absolute; top:6px; right:6px; width:20px; height:20px; accent-color: var(--hk-gold); cursor:pointer;
+}
+.hk-nfc-gallery-tile:has(input:checked){ border-color: var(--hk-gold); }

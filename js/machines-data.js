@@ -545,6 +545,47 @@ async function removeDocumentFromMachine(machineId, docType){
   return machine;
 }
 
+/* ---------- NFC Public Machine Profile ----------
+   Settings (status, token, overview/spec/gallery visibility) live in
+   machine.nfc, already included by bundleMachine() on the backend. The
+   gallery-with-per-image-visibility list used only by the NFC settings
+   tab is fetched separately (hkApiGetNfcSettings) since the main
+   machine.gallery shape elsewhere is just plain URL strings. */
+
+async function fetchNfcSettings(machineId){
+  const result = await hkApiGetNfcSettings(machineId);
+  if(result && result.error) throw new Error(result.error);
+  return result;
+}
+
+// fields: { enabled, showOverview, showSpecification, hiddenSpecFields }
+async function updateNfcSettings(machineId, fields){
+  const machine = getMachineById(machineId);
+  if(!machine) throw new Error('Machine not found');
+  const result = await hkTryPersist(hkApiUpdateNfcSettings({ machineId, ...fields }));
+  if(machine.nfc){
+    if(fields.enabled === true) machine.nfc.status = 'active';
+    if(fields.enabled === false) machine.nfc.status = 'disabled';
+    if(fields.showOverview !== undefined) machine.nfc.showOverview = fields.showOverview;
+    if(fields.showSpecification !== undefined) machine.nfc.showSpecification = fields.showSpecification;
+    if(fields.hiddenSpecFields !== undefined) machine.nfc.hiddenSpecFields = fields.hiddenSpecFields;
+    if(result && result.token) machine.nfc.token = result.token;
+  }
+  return machine;
+}
+
+async function regenerateNfcToken(machineId){
+  const machine = getMachineById(machineId);
+  if(!machine) throw new Error('Machine not found');
+  const result = await hkTryPersist(hkApiRegenerateNfcToken(machineId));
+  if(machine.nfc && result && result.token) machine.nfc.token = result.token;
+  return machine;
+}
+
+async function setImageNfcVisibility(machineId, groupKey, url, showOnNfc){
+  await hkTryPersist(hkApiUpdateImageNfcVisibility({ machineId, groupKey, url, showOnNfc }));
+}
+
 function categoryCounts(){
   const all = getAllMachines();
   const counts = { all: all.length };
@@ -614,3 +655,7 @@ window.addImageToMachine = addImageToMachine;
 window.removeImageFromMachine = removeImageFromMachine;
 window.setDocumentOnMachine = setDocumentOnMachine;
 window.removeDocumentFromMachine = removeDocumentFromMachine;
+window.fetchNfcSettings = fetchNfcSettings;
+window.updateNfcSettings = updateNfcSettings;
+window.regenerateNfcToken = regenerateNfcToken;
+window.setImageNfcVisibility = setImageNfcVisibility;

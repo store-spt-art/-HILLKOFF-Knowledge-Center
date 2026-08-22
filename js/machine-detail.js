@@ -13,6 +13,9 @@ let HK_EDIT_STATE = { overview: false, specification: false, internalImages: fal
 let HK_QUILL_INSTANCE = null;
 // Live Quill editor instance while the Overview description rich-text form is open.
 let HK_OVERVIEW_QUILL_INSTANCE = null;
+// Per-image NFC visibility list for the current machine's Gallery photos
+// (fetched separately from the main machine object — see hkWireNfcPanel).
+let HK_NFC_GALLERY_CACHE = null;
 // Add/edit state for the Parts List inline form.
 let HK_PART_FORM_STATE = { mode: null, partId: null };
 
@@ -83,6 +86,7 @@ const HK_TABS = [
   { key: 'parts', label: 'Parts List' },
   { key: 'gallery', label: 'Gallery' },
   { key: 'documents', label: 'Documents' },
+  { key: 'nfc', label: 'NFC' },
   { key: 'ai', label: 'AI Assistant' },
 ];
 
@@ -864,6 +868,209 @@ function hkPanelAI(m){
     </div>`;
 }
 
+/* ---------- NFC Public Machine Profile ---------- */
+
+function hkNfcStatusBadgeHtml(status){
+  const map = {
+    active: { cls: 'active', label: '🟢 ACTIVE' },
+    disabled: { cls: 'disabled', label: '⚪ DISABLED' },
+    not_registered: { cls: 'not-registered', label: '⚪ ยังไม่ได้ลงทะเบียน' },
+  };
+  const s = map[status] || map.not_registered;
+  return `<span class="hk-nfc-status hk-nfc-status--${s.cls}">${s.label}</span>`;
+}
+
+// The public nfc.html page lives alongside machine-detail.html in the
+// same html/ folder, so this just swaps the filename in the current URL.
+function hkNfcUrl(token){
+  if(!token) return '';
+  const path = window.location.pathname.replace(/[^/]*$/, '');
+  return `${window.location.origin}${path}nfc.html?token=${encodeURIComponent(token)}`;
+}
+
+function hkNfcGalleryChecklistHtml(gallery){
+  if(!gallery || !gallery.length){
+    return `<p class="hk-nfc-loading">ยังไม่มีรูปใน Gallery — ไปที่แท็บ Gallery เพื่อเพิ่มรูปก่อน</p>`;
+  }
+  const byGroup = {};
+  gallery.forEach(g => { if(!byGroup[g.groupKey]) byGroup[g.groupKey] = []; byGroup[g.groupKey].push(g); });
+  return Object.entries(byGroup).map(([groupKey, items]) => {
+    const meta = HK_GALLERY_GROUPS.find(g => g.key === groupKey);
+    const label = meta ? meta.label : groupKey;
+    const tiles = items.map(item => `
+      <label class="hk-nfc-gallery-tile">
+        <img src="${hkDriveImgUrl(item.url)}" alt="">
+        <input type="checkbox" data-nfc-gallery-toggle data-group="${hkEscapeHtml(groupKey)}" data-url="${hkEscapeHtml(item.url)}" ${item.showOnNfc ? 'checked' : ''}>
+      </label>`).join('');
+    return `
+      <div class="hk-nfc-gallery-group">
+        <div class="hk-nfc-gallery-group__label">${label}</div>
+        <div class="hk-nfc-gallery-group__grid">${tiles}</div>
+      </div>`;
+  }).join('');
+}
+
+function hkPanelNfc(m){
+  const nfc = m.nfc || { status: 'not_registered', token: '', showOverview: true, showSpecification: true, hiddenSpecFields: [] };
+
+  if(nfc.status === 'not_registered'){
+    return `
+      <div class="hk-nfc-panel">
+        ${hkNfcStatusBadgeHtml(nfc.status)}
+        <p class="hk-nfc-intro">เปิดใช้งาน NFC เพื่อสร้างลิงก์สาธารณะสำหรับติดแท็กบนตัวเครื่อง — ผู้ที่แตะมือถือที่แท็กจะเห็นเฉพาะ <strong>Overview, Specification, และ Gallery</strong> ตามส่วนที่เลือกเปิดไว้เท่านั้น ไม่รวม Internal Structure, Parts List, Documents, หรือ AI Assistant</p>
+        <button type="button" class="hk-btn hk-btn--primary" data-nfc-enable>+ เปิดใช้งาน NFC</button>
+      </div>`;
+  }
+
+  const url = hkNfcUrl(nfc.token);
+  const active = nfc.status === 'active';
+  const specRows = HK_SPEC_FIELDS.map(f => `
+    <label class="hk-nfc-check">
+      <input type="checkbox" data-nfc-spec-field="${f.key}" ${nfc.hiddenSpecFields.includes(f.key) ? '' : 'checked'}>
+      <span>${f.label}</span>
+    </label>`).join('');
+  const galleryHtml = (HK_NFC_GALLERY_CACHE && HK_NFC_GALLERY_CACHE.machineId === m.id)
+    ? hkNfcGalleryChecklistHtml(HK_NFC_GALLERY_CACHE.gallery)
+    : `<p class="hk-nfc-loading">กำลังโหลดรายการรูปภาพ...</p>`;
+
+  return `
+    <div class="hk-nfc-panel">
+      <div class="hk-nfc-panel__head">
+        ${hkNfcStatusBadgeHtml(nfc.status)}
+        <div class="hk-nfc-panel__actions">
+          <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-nfc-preview">👁 ดูตัวอย่าง</button>
+          <button type="button" class="hk-btn ${active ? 'hk-btn--danger' : 'hk-btn--primary'} hk-btn--sm" data-nfc-toggle>${active ? 'ปิดใช้งาน NFC' : 'เปิดใช้งาน NFC'}</button>
+        </div>
+      </div>
+
+      <div class="hk-nfc-url-row">
+        <input type="text" class="hk-input" readonly value="${hkEscapeHtml(url)}" data-nfc-url>
+        <button type="button" class="hk-btn hk-btn--ghost hk-btn--sm" data-nfc-copy>คัดลอกลิงก์</button>
+      </div>
+      <button type="button" class="hk-nfc-regenerate-link" data-nfc-regenerate>สร้างลิงก์ใหม่ (ลิงก์/แท็กเดิมจะใช้ไม่ได้ทันที)</button>
+
+      <div class="hk-nfc-section">
+        <label class="hk-nfc-check hk-nfc-check--section">
+          <input type="checkbox" data-nfc-show-overview ${nfc.showOverview ? 'checked' : ''}>
+          <span><strong>แสดง Overview</strong> (คำอธิบายเครื่อง)</span>
+        </label>
+      </div>
+
+      <div class="hk-nfc-section">
+        <label class="hk-nfc-check hk-nfc-check--section">
+          <input type="checkbox" data-nfc-show-spec ${nfc.showSpecification ? 'checked' : ''}>
+          <span><strong>แสดง Specification</strong> — เลือกได้ว่าจะให้แสดงหัวข้อไหนบ้าง</span>
+        </label>
+        <div class="hk-nfc-spec-fields" data-nfc-spec-fields${nfc.showSpecification ? '' : ' style="display:none;"'}>
+          ${specRows}
+        </div>
+      </div>
+
+      <div class="hk-nfc-section">
+        <div class="hk-nfc-section__label"><strong>Gallery</strong> — เลือกรูปที่จะให้แสดงบนหน้า NFC (ไม่รวม Internal Structure)</div>
+        ${galleryHtml}
+      </div>
+
+      <div class="hk-wizard-nav">
+        <button type="button" class="hk-btn hk-btn--primary" data-nfc-save>บันทึกการตั้งค่า NFC</button>
+      </div>
+    </div>`;
+}
+
+async function hkWireNfcPanel(machine){
+  const panel = document.querySelector('.hk-tabpanel[data-panel="nfc"]');
+  if(!panel) return;
+
+  const enableBtn = panel.querySelector('[data-nfc-enable]');
+  if(enableBtn) enableBtn.addEventListener('click', async () => {
+    try{
+      await updateNfcSettings(machine.id, { enabled: true });
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, 'nfc');
+    }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+  });
+
+  const toggleBtn = panel.querySelector('[data-nfc-toggle]');
+  if(toggleBtn) toggleBtn.addEventListener('click', async () => {
+    const enabling = machine.nfc.status !== 'active';
+    try{
+      await updateNfcSettings(machine.id, { enabled: enabling });
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkRerenderPanel(machine, 'nfc');
+    }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+  });
+
+  const copyBtn = panel.querySelector('[data-nfc-copy]');
+  if(copyBtn) copyBtn.addEventListener('click', async () => {
+    const input = panel.querySelector('[data-nfc-url]');
+    try{
+      await navigator.clipboard.writeText(input.value);
+      hkToast('คัดลอกลิงก์แล้ว');
+    }catch(e){
+      input.select();
+      hkToast('เลือกลิงก์ไว้ให้แล้ว กด Ctrl+C เพื่อคัดลอก');
+    }
+  });
+
+  const previewBtn = panel.querySelector('[data-nfc-preview]');
+  if(previewBtn) previewBtn.addEventListener('click', () => {
+    const input = panel.querySelector('[data-nfc-url]');
+    if(input && input.value) window.open(input.value, '_blank');
+  });
+
+  const regenBtn = panel.querySelector('[data-nfc-regenerate]');
+  if(regenBtn) regenBtn.addEventListener('click', async () => {
+    if(!confirm('สร้างลิงก์ใหม่? ลิงก์เดิม (และแท็ก NFC ที่เขียนไว้แล้ว) จะใช้งานไม่ได้ทันที')) return;
+    try{
+      await regenerateNfcToken(machine.id);
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkToast('สร้างลิงก์ใหม่แล้ว');
+      hkRerenderPanel(machine, 'nfc');
+    }catch(err){ hkToast(err.message || 'เกิดข้อผิดพลาด'); }
+  });
+
+  const showSpecCheckbox = panel.querySelector('[data-nfc-show-spec]');
+  if(showSpecCheckbox) showSpecCheckbox.addEventListener('change', () => {
+    const fieldsBox = panel.querySelector('[data-nfc-spec-fields]');
+    if(fieldsBox) fieldsBox.style.display = showSpecCheckbox.checked ? '' : 'none';
+  });
+
+  const saveBtn = panel.querySelector('[data-nfc-save]');
+  if(saveBtn) saveBtn.addEventListener('click', async () => {
+    const showOverview = panel.querySelector('[data-nfc-show-overview]').checked;
+    const showSpecification = panel.querySelector('[data-nfc-show-spec]').checked;
+    const hiddenSpecFields = HK_SPEC_FIELDS.filter(f => {
+      const cb = panel.querySelector(`[data-nfc-spec-field="${f.key}"]`);
+      return cb && !cb.checked;
+    }).map(f => f.key);
+    try{
+      await updateNfcSettings(machine.id, { showOverview, showSpecification, hiddenSpecFields });
+      if(HK_LAST_SAVE_ERROR) hkToast('บันทึกไว้ในเครื่องนี้ชั่วคราว (บันทึกไปยังฐานข้อมูลไม่สำเร็จ)');
+      hkToast('บันทึกการตั้งค่า NFC แล้ว');
+    }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); }
+  });
+
+  panel.querySelectorAll('[data-nfc-gallery-toggle]').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      try{
+        await setImageNfcVisibility(machine.id, cb.dataset.group, cb.dataset.url, cb.checked);
+      }catch(err){ hkToast(err.message || 'บันทึกไม่สำเร็จ'); cb.checked = !cb.checked; }
+    });
+  });
+
+  // Lazy-load the per-image gallery visibility list once per machine —
+  // not part of the main machine object, and no need to re-fetch it on
+  // every re-render of this same panel.
+  if(machine.nfc && machine.nfc.status !== 'not_registered' &&
+     (!HK_NFC_GALLERY_CACHE || HK_NFC_GALLERY_CACHE.machineId !== machine.id)){
+    try{
+      const settings = await fetchNfcSettings(machine.id);
+      HK_NFC_GALLERY_CACHE = { machineId: machine.id, gallery: settings.gallery || [] };
+      hkRerenderPanel(machine, 'nfc');
+    }catch(err){ console.error('Failed to load NFC gallery settings:', err); }
+  }
+}
+
 const HK_PANEL_RENDERERS = {
   overview: hkPanelOverview,
   specification: hkPanelSpecification,
@@ -871,6 +1078,7 @@ const HK_PANEL_RENDERERS = {
   parts: hkPanelParts,
   gallery: hkPanelGallery,
   documents: hkPanelDocuments,
+  nfc: hkPanelNfc,
   ai: hkPanelAI,
 };
 
@@ -881,6 +1089,7 @@ const HK_PANEL_WIRERS = {
   parts: hkWirePartsPanel,
   gallery: (machine) => hkWireImagePanel(machine, 'gallery'),
   documents: hkWireDocumentsPanel,
+  nfc: hkWireNfcPanel,
   ai: hkWireAIPanel,
 };
 
@@ -991,6 +1200,7 @@ function hkRenderDetail(machine){
   hkWireImagePanel(machine, 'gallery');
   hkWirePartsPanel(machine);
   hkWireDocumentsPanel(machine);
+  hkWireNfcPanel(machine);
   hkWireAIPanel(machine);
   hkRenderApprovalSection(machine);
 }
