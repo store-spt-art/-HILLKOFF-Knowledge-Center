@@ -494,6 +494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   hkResetWizard();
   document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = hkIcon(el.getAttribute('data-icon')));
   hkWireSidebarToggle();
+  hkWireSidebarCollapse();
   hkAuthRenderSidebarFooter();
   hkRenderStep();
 

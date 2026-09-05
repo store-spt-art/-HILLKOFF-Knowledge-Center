@@ -106,7 +106,10 @@ function hkRenderGrid(){
   }
   grid.style.display = '';
   empty.style.display = 'none';
+  grid.classList.remove('hk-fade-in');
   grid.innerHTML = results.map(hkMachineCardHtml).join('');
+  void grid.offsetWidth; // restart the animation on every render
+  grid.classList.add('hk-fade-in');
   grid.querySelectorAll('.hk-mcard').forEach(card => {
     card.addEventListener('click', () => {
       window.location.href = `machine-detail.html?id=${encodeURIComponent(card.dataset.id)}`;
@@ -114,9 +117,29 @@ function hkRenderGrid(){
   });
 }
 
+function hkSkeletonCardHtml(){
+  return `
+    <div class="hk-skeleton-card">
+      <div class="hk-skeleton hk-skeleton-card__media"></div>
+      <div class="hk-skeleton-card__body">
+        <div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--sm"></div>
+        <div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--md"></div>
+        <div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--lg"></div>
+      </div>
+    </div>`;
+}
+
 function hkRenderSkeleton(){
   const grid = document.getElementById('hk-grid');
-  grid.innerHTML = Array.from({ length: 8 }).map(() => `<div class="hk-skeleton hk-skeleton-card"></div>`).join('');
+  const empty = document.getElementById('hk-empty');
+  empty.style.display = 'none';
+  grid.style.display = '';
+  grid.innerHTML = Array.from({ length: 8 }).map(hkSkeletonCardHtml).join('');
+
+  const chips = document.getElementById('hk-chips');
+  if(chips && !chips.children.length){
+    chips.innerHTML = Array.from({ length: 6 }).map(() => `<div class="hk-skeleton hk-chip-skeleton"></div>`).join('');
+  }
 }
 
 function hkWireSearch(){
@@ -128,19 +151,43 @@ function hkWireSearch(){
   hkWireSearchShortcut('#hk-search-input');
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  hkRenderIcons();
-  hkWireSearch();
-  hkWireSidebarToggle();
-  hkAuthRenderSidebarFooter();
-  hkRenderSkeleton();
-
-  await hkBootstrapMachines();
-  if(HK_LAST_LOAD_ERROR) hkToast(hkLoadErrorToastMessage());
-
+// Paints whatever machine data is currently in HK_MACHINES_CACHE. Shared
+// by the instant "cached" paint and the final "fresh from server" paint
+// below so both go through the exact same render path.
+function hkPaintMachines(){
   hkRenderSidebarCategories();
   hkRenderChips();
   hkSyncActiveStates();
   hkRenderIcons();
   hkRenderGrid();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  hkRenderIcons();
+  hkWireSearch();
+  hkWireSidebarToggle();
+  hkWireSidebarCollapse();
+  hkAuthRenderSidebarFooter();
+
+  // Stale-while-revalidate: if this browser tab already fetched the
+  // machine list once this session, show it immediately (near-instant)
+  // instead of a bare skeleton, then refresh quietly in the background.
+  // First-ever load in a fresh tab still has nothing to show yet, so it
+  // falls back to the skeleton like before.
+  let paintedFromCache = false;
+  try{
+    const cached = JSON.parse(sessionStorage.getItem('hk_machines_cache_v1') || 'null');
+    if(Array.isArray(cached) && cached.length){
+      HK_MACHINES_CACHE = cached;
+      hkPaintMachines();
+      paintedFromCache = true;
+    }
+  }catch(e){ /* corrupt cache — ignore and fall through to the skeleton */ }
+
+  if(!paintedFromCache) hkRenderSkeleton();
+
+  await hkBootstrapMachines();
+  if(HK_LAST_LOAD_ERROR) hkToast(hkLoadErrorToastMessage());
+
+  hkPaintMachines();
 });

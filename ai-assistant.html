@@ -39,6 +39,14 @@
 
 <div class="hk-app">
   <aside class="hk-sidebar">
+    <script>
+      if(localStorage.getItem('hk_sidebar_collapsed') === '1'){
+        document.currentScript.parentElement.classList.add('is-collapsed');
+      }
+    </script>
+    <button class="hk-sidebar__collapse" data-hk-sidebar-collapse aria-label="ย่อ/ขยายเมนู" title="ย่อ/ขยายเมนู">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
     <div class="hk-brand">
       <div class="hk-brand__mark">HK</div>
       <div>
@@ -67,7 +75,7 @@
     </div>
   </aside>
 
-  <div>
+  <div class="hk-main">
     <header class="hk-navbar">
       <div class="hk-breadcrumb" style="margin:0;">
         <a href="index.html">Dashboard</a>

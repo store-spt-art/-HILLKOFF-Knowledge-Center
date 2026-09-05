@@ -1229,6 +1229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if(!machine){
     hkRenderSidebarCategoriesDetail(null);
     hkWireSidebarToggle();
+    hkWireSidebarCollapse();
     hkRenderNotFound();
     document.getElementById('hk-breadcrumb').innerHTML = `<a href="index.html">Dashboard</a>`;
     return;
@@ -1236,6 +1237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   hkRenderSidebarCategoriesDetail(machine.category);
   hkWireSidebarToggle();
+  hkWireSidebarCollapse();
   hkRenderBreadcrumb(machine);
   hkRenderDetail(machine);
 });

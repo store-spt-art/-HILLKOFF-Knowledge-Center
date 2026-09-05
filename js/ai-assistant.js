@@ -61,6 +61,7 @@ function hkRenderAIRoot(){
 document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = hkIcon(el.getAttribute('data-icon')));
   hkWireSidebarToggle();
+  hkWireSidebarCollapse();
   hkAuthRenderSidebarFooter();
   hkRenderAIRoot();
   await hkBootstrapMachines();

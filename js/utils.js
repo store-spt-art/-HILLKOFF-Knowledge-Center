@@ -38,6 +38,31 @@ function hkWireSidebarToggle(){
   sidebar.querySelectorAll('a, .hk-navitem').forEach(el => el.addEventListener('click', close));
 }
 
+/* ---------- Sidebar collapse (desktop) ----------
+   Separate from hkWireSidebarToggle above, which only handles the
+   mobile slide-out drawer. This one lets people shrink the sidebar to
+   an icon-only rail on desktop, and remembers the choice in
+   localStorage so it stays collapsed/expanded on the next visit. The
+   collapsed class is also applied as early as possible (see the inline
+   script in <head> on each page) so the sidebar doesn't visibly flash
+   from expanded to collapsed after the page has already painted. */
+const HK_SIDEBAR_COLLAPSE_KEY = 'hk_sidebar_collapsed';
+
+function hkWireSidebarCollapse(){
+  const sidebar = document.querySelector('.hk-sidebar');
+  const btn = document.querySelector('[data-hk-sidebar-collapse]');
+  if(!sidebar || !btn) return;
+
+  const collapsed = localStorage.getItem(HK_SIDEBAR_COLLAPSE_KEY) === '1';
+  sidebar.classList.toggle('is-collapsed', collapsed);
+
+  btn.addEventListener('click', () => {
+    const next = !sidebar.classList.contains('is-collapsed');
+    sidebar.classList.toggle('is-collapsed', next);
+    localStorage.setItem(HK_SIDEBAR_COLLAPSE_KEY, next ? '1' : '0');
+  });
+}
+
 /* ---------- Search shortcut ("/") ---------- */
 function hkWireSearchShortcut(inputSelector){
   const input = document.querySelector(inputSelector);

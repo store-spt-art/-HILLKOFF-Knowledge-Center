@@ -33,8 +33,21 @@
 .hk-mcard__meta{ font-size: 12.5px; color: var(--hk-text-dim); }
 .hk-mcard__id{ margin-top:6px; font-family: var(--hk-font-mono); font-size:11px; color: var(--hk-text-dim); }
 
-/* ---------- Skeleton grid ---------- */
-.hk-skeleton-card{ height: 230px; }
+/* ---------- Skeleton grid (mirrors .hk-mcard's structure so the loading
+   state and the real cards line up instead of looking like unrelated
+   gray boxes) ---------- */
+.hk-skeleton-card{
+  background: var(--hk-surface); border: 1px solid var(--hk-border); border-radius: var(--hk-radius-lg);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.hk-skeleton-card__media{ aspect-ratio: 4/3; border-radius: 0; }
+.hk-skeleton-card__body{ padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.hk-skeleton-card__line{ height: 10px; border-radius: 999px; }
+.hk-skeleton-card__line--sm{ width: 40%; height: 8px; }
+.hk-skeleton-card__line--md{ width: 80%; }
+.hk-skeleton-card__line--lg{ width: 60%; margin-top: 2px; }
+
+.hk-chip-skeleton{ width: 92px; height: 30px; border-radius: 999px; }
 
 @media (max-width: 640px){
   .hk-grid{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }

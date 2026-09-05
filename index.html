@@ -39,6 +39,17 @@
 
 <div class="hk-app">
   <aside class="hk-sidebar">
+    <script>
+      // Applied immediately as the parser reaches this point (before the
+      // rest of the sidebar's children paint) so a returning visitor who
+      // collapsed the sidebar doesn't see it flash full-width first.
+      if(localStorage.getItem('hk_sidebar_collapsed') === '1'){
+        document.currentScript.parentElement.classList.add('is-collapsed');
+      }
+    </script>
+    <button class="hk-sidebar__collapse" data-hk-sidebar-collapse aria-label="ย่อ/ขยายเมนู" title="ย่อ/ขยายเมนู">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
     <div class="hk-brand">
       <div class="hk-brand__mark">HK</div>
       <div>
@@ -78,7 +89,7 @@
     </div>
   </aside>
 
-  <div>
+  <div class="hk-main">
     <header class="hk-navbar">
       <div class="hk-search">
         <span data-icon="search"></span>
@@ -100,9 +111,21 @@
         </a>
       </div>
 
-      <div class="hk-chips" id="hk-chips"></div>
+      <div class="hk-chips" id="hk-chips">
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+        <div class="hk-skeleton hk-chip-skeleton"></div>
+      </div>
 
-      <div id="hk-grid" class="hk-grid"></div>
+      <div id="hk-grid" class="hk-grid">
+        <div class="hk-skeleton-card"><div class="hk-skeleton hk-skeleton-card__media"></div><div class="hk-skeleton-card__body"><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--sm"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--md"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--lg"></div></div></div>
+        <div class="hk-skeleton-card"><div class="hk-skeleton hk-skeleton-card__media"></div><div class="hk-skeleton-card__body"><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--sm"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--md"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--lg"></div></div></div>
+        <div class="hk-skeleton-card"><div class="hk-skeleton hk-skeleton-card__media"></div><div class="hk-skeleton-card__body"><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--sm"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--md"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--lg"></div></div></div>
+        <div class="hk-skeleton-card"><div class="hk-skeleton hk-skeleton-card__media"></div><div class="hk-skeleton-card__body"><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--sm"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--md"></div><div class="hk-skeleton hk-skeleton-card__line hk-skeleton-card__line--lg"></div></div></div>
+      </div>
       <div id="hk-empty" class="hk-empty" style="display:none;">
         <div class="hk-empty__icon">🔍</div>
         <h3>ไม่พบเครื่องจักรที่ค้นหา</h3>
